@@ -1077,3 +1077,43 @@ def test_chat_streaming_indicator_in_layout():
     assert "chatStreaming" in js_content
     assert "docbuddy-chat-streaming" in js_content
     assert "docbuddy-pulse" in js_content
+
+
+def test_workflow_streaming_indicator_in_layout():
+    """Verify layout plugin shows streaming indicator on workflow tab."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-layout-plugin.js").text
+
+    assert "workflowStreaming" in js_content
+    assert "docbuddy-workflow-streaming" in js_content
+    assert "docbuddy-pulse" in js_content
+
+
+def test_workflow_dispatches_streaming_events():
+    """Verify WorkflowPanel dispatches streaming state events."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    assert "docbuddy-workflow-streaming" in js_content
+
+
+def test_workflow_output_scrollable():
+    """Verify workflow code block output is scrollable with responsive max-height."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    # Should use viewport-relative max height for output blocks
+    assert "maxHeight: '60vh'" in js_content
+    # Should have proper overflow for scrolling
+    assert "overflowY: 'auto'" in js_content
+    # Should use overflow-wrap for proper word wrapping
+    assert "overflowWrap: 'break-word'" in js_content
+
+
+def test_workflow_mobile_scroll_support():
+    """Verify workflow panel supports smooth scrolling on mobile."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    # Should have webkit touch scrolling for mobile
+    assert "WebkitOverflowScrolling: 'touch'" in js_content

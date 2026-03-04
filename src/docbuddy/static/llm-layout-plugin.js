@@ -76,6 +76,21 @@
         };
       }, []);
 
+      // Track whether workflow is actively streaming (for tab indicator)
+      var _workflowStreamState = React.useState(false);
+      var workflowStreaming = _workflowStreamState[0];
+      var setWorkflowStreaming = _workflowStreamState[1];
+
+      React.useEffect(function () {
+        var handler = function (e) {
+          setWorkflowStreaming(e.detail && e.detail.streaming);
+        };
+        window.addEventListener('docbuddy-workflow-streaming', handler);
+        return function () {
+          window.removeEventListener('docbuddy-workflow-streaming', handler);
+        };
+      }, []);
+
       // Tab styles for 3 tabs (theme-aware)
       var tabStyle = function (tab) {
         return {
@@ -154,7 +169,22 @@
             React.createElement(
               "button",
               { role: "tab", "aria-selected": activeTab === "workflow", onClick: function () { setActiveTab("workflow"); }, style: tabStyle("workflow") },
-              "Workflow"
+              "Workflow",
+              workflowStreaming && activeTab !== "workflow"
+                ? React.createElement("span", {
+                    style: {
+                      display: "inline-block",
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      background: "#10b981",
+                      marginLeft: "6px",
+                      animation: "docbuddy-pulse 1.4s infinite ease-in-out",
+                      verticalAlign: "middle"
+                    },
+                    title: "Streaming in progress"
+                  })
+                : null
             ),
             // Settings tab
             React.createElement(

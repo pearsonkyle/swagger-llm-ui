@@ -2949,6 +2949,7 @@
           this._abortController.abort();
           this._abortController = null;
         }
+        window.dispatchEvent(new CustomEvent('docbuddy-workflow-streaming', { detail: { streaming: false } }));
       }
 
       handleAddBlock() {
@@ -2996,6 +2997,7 @@
           self._abortController.abort();
           self._abortController = null;
         }
+        window.dispatchEvent(new CustomEvent('docbuddy-workflow-streaming', { detail: { streaming: true } }));
         self.setState(function(prev) {
           return {
             running: true,
@@ -3014,6 +3016,7 @@
         if (this._abortController) {
           this._abortController.abort();
         }
+        window.dispatchEvent(new CustomEvent('docbuddy-workflow-streaming', { detail: { streaming: false } }));
         this.setState({ running: false, aborted: true, currentBlockIdx: -1 });
       }
 
@@ -3021,6 +3024,7 @@
         if (this._abortController) {
           this._abortController.abort();
         }
+        window.dispatchEvent(new CustomEvent('docbuddy-workflow-streaming', { detail: { streaming: false } }));
         this.setState({
           blocks: [createDefaultBlock()],
           running: false,
@@ -3038,6 +3042,7 @@
         function runBlock(idx) {
           var currentBlocks = self.state.blocks;
           if (idx >= currentBlocks.length || self.state.aborted) {
+            window.dispatchEvent(new CustomEvent('docbuddy-workflow-streaming', { detail: { streaming: false } }));
             self.setState({ running: false, currentBlockIdx: -1 });
             return;
           }
@@ -3394,6 +3399,7 @@
           display: 'flex',
           flexDirection: 'column',
           gap: '12px',
+          WebkitOverflowScrolling: 'touch',
         };
 
         var hasContent = s.blocks.some(function(b) { return b.content && b.content.trim(); });
@@ -3566,9 +3572,6 @@
                         style: {
                           padding: '0',
                           margin: 0,
-                          overflowX: 'auto',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-all',
                           cursor: 'pointer',
                           position: 'relative',
                         },
@@ -3602,14 +3605,15 @@
                             padding: '12px',
                             margin: 0,
                             overflowX: 'auto',
+                            overflowY: 'auto',
                             whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
+                            overflowWrap: 'break-word',
                             color: isDone ? '#a5b4fc' : 'var(--theme-text-primary)',
                             lineHeight: '1.6',
                             fontSize: '13px',
                             fontFamily: "'Consolas', 'Monaco', monospace",
-                            maxHeight: '300px',
-                            overflowY: 'auto',
+                            maxHeight: '60vh',
+                            WebkitOverflowScrolling: 'touch',
                           }
                         },
                         React.createElement('code', null, block.output)
