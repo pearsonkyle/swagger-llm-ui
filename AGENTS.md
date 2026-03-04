@@ -274,22 +274,9 @@ Changing this order will break the UI.
 
 ### Template System
 - Jinja2 used for HTML rendering.
-- URLs for JS/CSS resources are injected via template parameters (not hardcoded).
+- External JS/CSS URLs (e.g., Swagger UI CDN resources and the layout plugin URL) are injected via template parameters; internal `docbuddy-*.js` module paths are hardcoded in the template.
 - `debug=True` enables auto-reload for development.
 - FOUC fix: Theme injection script runs immediately in `<head>`.
-
-## Provider Presets
-
-Defined in HTML template and `docbuddy-core.js`:
-- Ollama (`http://localhost:11434/v1`)
-- LM Studio (`http://localhost:1234/v1`)
-- vLLM (`http://localhost:8000/v1`)
-- Custom
-
-## Build System
-
-- **Hatchling** (PEP 517) for packaging. Static files and templates are force-included in wheel via `pyproject.toml`.
-- **pytest** with `asyncio_mode = "auto"` and anyio for async support.
 
 ## Best Practices for Contributors
 

@@ -9,6 +9,7 @@
   // ── Chat panel component ───────────────────────────────────────────────────
   function ChatPanelFactory(system) {
     var React = system.React;
+    var CodeBlock = DB.createCodeBlock(React);
 
     return class ChatPanel extends React.Component {
       constructor(props) {
@@ -755,7 +756,7 @@
                     style: { fontSize: "12px", fontFamily: "'Consolas', 'Monaco', monospace", color: "var(--theme-text-primary)" }
                   }, tcPath)
                 ),
-                React.createElement(DB.createCodeBlock(React), {
+                React.createElement(CodeBlock, {
                   key: "curl-codeblock",
                   text: curlCommand,
                   language: "shell",
@@ -810,7 +811,7 @@
                   ? React.createElement("span", { style: { fontSize: "11px", color: "#10b981", fontWeight: "500" } }, "✓ Copied")
                   : null
                 ),
-                React.createElement(DB.createCodeBlock(React), {
+                React.createElement(CodeBlock, {
                   key: "tool-response-codeblock",
                   text: formattedBody ? formattedBody.substring(0, 2000) : '',
                   language: "json",

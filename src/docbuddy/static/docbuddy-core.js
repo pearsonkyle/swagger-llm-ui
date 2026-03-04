@@ -928,17 +928,18 @@
       }
 
       handleCopy() {
-        const { text } = this.props;
+        var text = this.props.text;
         if (!text) return;
 
+        var self = this;
         copyToClipboard(text).then(function(copied) {
           if (copied) {
-            this.setState({ copied: true });
-            setTimeout(() => {
-              this.setState({ copied: false });
+            self.setState({ copied: true });
+            setTimeout(function() {
+              self.setState({ copied: false });
             }, 2000);
           }
-        }.bind(this)).catch(function(err) {
+        }).catch(function(err) {
           console.error('Failed to copy:', err);
         });
       }
@@ -962,8 +963,11 @@
       }
 
       render() {
-        const { text, language = 'text', messageId } = this.props;
-        const { copied, isHovering } = this.state;
+        var text = this.props.text;
+        var language = (typeof this.props.language !== "undefined") ? this.props.language : "text";
+        var messageId = this.props.messageId;
+        var copied = this.state.copied;
+        var isHovering = this.state.isHovering;
 
         return React.createElement(
           "div",

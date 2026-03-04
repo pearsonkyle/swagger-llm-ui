@@ -135,13 +135,14 @@
           this._abortController.abort();
         }
         window.dispatchEvent(new CustomEvent('docbuddy-workflow-streaming', { detail: { streaming: false } }));
+        var defaultBlock = DB.createDefaultBlock();
         this.setState({
-          blocks: [DB.createDefaultBlock()],
+          blocks: [defaultBlock],
           running: false,
           currentBlockIdx: -1,
           aborted: false,
         });
-        DB.saveWorkflow({ blocks: [DB.createDefaultBlock()] });
+        DB.saveWorkflow({ blocks: [defaultBlock] });
       }
 
       runWorkflow() {
