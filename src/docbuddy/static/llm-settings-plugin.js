@@ -3651,6 +3651,70 @@
     }
   }
 
+  // ── Robust JSON extraction from LLM output ────────────────────────────────
+  function extractJsonArray(text) {
+    // Strip markdown code fences (```json ... ``` or ``` ... ```)
+    var stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+    // Try to find a JSON array
+    var match = stripped.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        var parsed = JSON.parse(match[0]);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        // Try cleaning: remove bold markers, stray asterisks, unbalanced quotes
+        var cleaned = match[0]
+          .replace(/\*\*/g, '')
+          .replace(/\*([^*]*)\*/g, '$1');
+        try {
+          var parsed2 = JSON.parse(cleaned);
+          if (Array.isArray(parsed2)) return parsed2;
+        } catch (e2) {
+          // Last resort: extract quoted strings
+          var strings = [];
+          var re = /"([^"]+)"/g;
+          var m;
+          while ((m = re.exec(stripped)) !== null) {
+            if (m[1].trim()) strings.push(m[1].trim());
+          }
+          if (strings.length > 0) return strings;
+        }
+      }
+    }
+    // Fallback: try parsing the whole stripped text
+    try {
+      var whole = JSON.parse(stripped);
+      if (Array.isArray(whole)) return whole;
+    } catch (e) {}
+    return [];
+  }
+
+  // ── Build default topic system prompt with OpenAPI context ────────────────
+  function buildDefaultTopicSystemPrompt() {
+    var lines = [
+      'You are a topic generation assistant that creates structured, hierarchical topic trees.',
+      'Generate specific, diverse subtopics that form a clear learning hierarchy.',
+      'Return ONLY a JSON array of strings, no other text or formatting.',
+      'Do not include markdown, bold markers, or links in the topic names.',
+      'Keep topics concise (under 80 characters each).'
+    ];
+    if (_cachedOpenapiSchema) {
+      var info = _cachedOpenapiSchema.info || {};
+      lines.push('');
+      lines.push('Context: The topics should be relevant to the following API:');
+      lines.push('API: ' + (info.title || 'Unknown API'));
+      if (info.description) {
+        lines.push('Description: ' + info.description.substring(0, 300));
+      }
+      var paths = _cachedOpenapiSchema.paths || {};
+      var endpoints = Object.keys(paths).slice(0, 15);
+      if (endpoints.length > 0) {
+        lines.push('Endpoints: ' + endpoints.join(', '));
+      }
+    }
+    return lines.join('\n');
+  }
+
   // ── Synthesizer panel component ───────────────────────────────────────────
   function SynthesizerPanelFactory(system) {
     var React = system.React;
@@ -3664,10 +3728,11 @@
           topicPrompt: saved.topicPrompt || '',
           topicDepth: saved.topicDepth != null ? saved.topicDepth : 3,
           topicDegree: saved.topicDegree != null ? saved.topicDegree : 3,
-          topicSystemPrompt: saved.topicSystemPrompt || '',
+          topicSystemPrompt: saved.topicSystemPrompt || buildDefaultTopicSystemPrompt(),
           topics: saved.topics || [],
           topicGenerating: false,
           topicProgress: '',
+          summarizing: false,
 
           // Data generation
           genSystemPrompt: saved.genSystemPrompt || '',
@@ -3686,6 +3751,7 @@
         };
         this._abortController = null;
         this.handleGenerateTopics = this.handleGenerateTopics.bind(this);
+        this.handleSummarizeFromOpenAPI = this.handleSummarizeFromOpenAPI.bind(this);
         this.handleGenerateData = this.handleGenerateData.bind(this);
         this.handleStop = this.handleStop.bind(this);
         this.handleExportTopics = this.handleExportTopics.bind(this);
@@ -3695,7 +3761,13 @@
       }
 
       componentDidMount() {
-        ensureOpenapiSchemaCached();
+        var self = this;
+        ensureOpenapiSchemaCached(function() {
+          // Update the default system prompt now that schema is available
+          if (!loadSynthSettings() || !loadSynthSettings().topicSystemPrompt) {
+            self.setState({ topicSystemPrompt: buildDefaultTopicSystemPrompt() });
+          }
+        });
       }
 
       componentDidUpdate(prevProps, prevState) {
@@ -3774,46 +3846,61 @@
         });
       }
 
-      // ── Topic graph generation ──────────────────────────────────────────
+      // ── Summarize OpenAPI into root topic ──────────────────────────────
+      handleSummarizeFromOpenAPI() {
+        var self = this;
+        if (!_cachedOpenapiSchema) {
+          self.setState({ topicProgress: 'No OpenAPI schema available. Make sure the API is loaded.' });
+          return;
+        }
+        self.setState({ summarizing: true, topicProgress: 'Summarizing API...' });
+        var context = buildOpenApiContext(_cachedOpenapiSchema).substring(0, 3000);
+        var prompt = 'Based on the following API documentation, generate a concise root topic (one sentence) ' +
+          'that captures the main domain and purpose of this API. Return ONLY the topic text, nothing else.\n\n' + context;
+        this._callLLM([
+          { role: 'system', content: 'You summarize APIs into concise topic descriptions. Return only the topic text.' },
+          { role: 'user', content: prompt }
+        ])
+        .then(function(content) {
+          var topic = content.replace(/^["']|["']$/g, '').trim();
+          self.setState({ topicPrompt: topic, summarizing: false, topicProgress: 'Root topic generated from API' });
+        })
+        .catch(function(err) {
+          self.setState({ summarizing: false, topicProgress: 'Error summarizing: ' + err.message });
+        });
+      }
+
+      // ── Topic tree generation (tree mode) ───────────────────────────────
       handleGenerateTopics() {
         var self = this;
         if (!this.state.topicPrompt.trim()) return;
 
         this._abortController = new AbortController();
         var signal = this._abortController.signal;
-        self.setState({ topicGenerating: true, topicProgress: 'Generating root topics...', topics: [] });
+        self.setState({ topicGenerating: true, topicProgress: 'Generating top-level topics...', topics: [] });
 
         var depth = Math.max(1, Math.min(5, parseInt(this.state.topicDepth) || 3));
         var degree = Math.max(1, Math.min(10, parseInt(this.state.topicDegree) || 3));
         var rootPrompt = this.state.topicPrompt.trim();
-        var topicSysPrompt = this.state.topicSystemPrompt.trim() ||
-          'You are a topic generation assistant. Generate specific, diverse subtopics. Return ONLY a JSON array of strings, no other text.';
+        var topicSysPrompt = this.state.topicSystemPrompt.trim() || buildDefaultTopicSystemPrompt();
 
-        // Build the topic tree level-by-level (BFS)
-        var allTopics = [{ topic: rootPrompt, depth: 0, parent: null }];
-        var queue = [{ topic: rootPrompt, depth: 0 }];
+        // Tree structure: root -> children, each with id and children list
+        var nextId = 0;
+        var root = { id: nextId++, topic: rootPrompt, children: [] };
+        var allNodes = [root];
 
-        function processLevel() {
-          if (queue.length === 0 || signal.aborted) {
-            self.setState({
-              topics: allTopics,
-              topicGenerating: false,
-              topicProgress: 'Generated ' + allTopics.length + ' topics'
-            });
+        // Generate children for a single node, returning a promise
+        function expandNode(node, currentDepth) {
+          if (currentDepth >= depth || signal.aborted) {
             return Promise.resolve();
           }
 
-          var current = queue.shift();
-          if (current.depth >= depth) {
-            return processLevel();
-          }
-
           self.setState({
-            topicProgress: 'Expanding "' + current.topic.substring(0, 40) + '..." (depth ' + (current.depth + 1) + '/' + depth + ')',
-            topics: allTopics.slice()
+            topicProgress: 'Expanding "' + node.topic.substring(0, 40) + (node.topic.length > 40 ? '...' : '') + '" (level ' + (currentDepth + 1) + '/' + depth + ')',
+            topics: allNodes.slice()
           });
 
-          var expandPrompt = 'Generate exactly ' + degree + ' specific subtopics for: "' + current.topic + '"\n\n' +
+          var expandPrompt = 'Generate exactly ' + degree + ' specific subtopics for: "' + node.topic + '"\n\n' +
             'The subtopics should be diverse, specific, and directly related to the parent topic.\n' +
             'Return ONLY a JSON array of ' + degree + ' strings. Example: ["subtopic1", "subtopic2", "subtopic3"]';
 
@@ -3822,43 +3909,61 @@
             { role: 'user', content: expandPrompt }
           ], signal)
           .then(function(content) {
-            var subtopics = [];
-            try {
-              // Try to extract JSON array from response
-              var match = content.match(/\[[\s\S]*?\]/);
-              if (match) {
-                subtopics = JSON.parse(match[0]);
+            var subtopics = extractJsonArray(content);
+            subtopics.slice(0, degree).forEach(function(st) {
+              if (typeof st === 'string' && st.trim()) {
+                var child = { id: nextId++, topic: st.trim(), children: [] };
+                node.children.push(child);
+                allNodes.push(child);
               }
-            } catch (e) {
-              console.warn('Failed to parse topics:', content);
-            }
-
-            if (Array.isArray(subtopics)) {
-              subtopics.slice(0, degree).forEach(function(st) {
-                if (typeof st === 'string' && st.trim()) {
-                  var node = { topic: st.trim(), depth: current.depth + 1, parent: current.topic };
-                  allTopics.push(node);
-                  if (current.depth + 1 < depth) {
-                    queue.push({ topic: st.trim(), depth: current.depth + 1 });
-                  }
-                }
-              });
-            }
-
-            return processLevel();
-          })
-          .catch(function(err) {
-            if (err.name !== 'AbortError') {
-              console.error('Topic generation error:', err);
-              self.setState({
-                topicProgress: 'Error: ' + err.message,
-                topicGenerating: false
-              });
-            }
+            });
           });
         }
 
-        processLevel();
+        // Level-by-level expansion: generate all children at current level, then recurse
+        function expandLevel(nodesAtLevel, currentDepth) {
+          if (currentDepth >= depth || signal.aborted || nodesAtLevel.length === 0) {
+            self.setState({
+              topics: allNodes.slice(),
+              topicGenerating: false,
+              topicProgress: 'Generated ' + allNodes.length + ' topics in tree'
+            });
+            return Promise.resolve();
+          }
+
+          // Expand each node at this level sequentially so we can stream progress
+          var idx = 0;
+          function expandNext() {
+            if (idx >= nodesAtLevel.length || signal.aborted) {
+              // Collect all children at this level for next round
+              var nextLevel = [];
+              nodesAtLevel.forEach(function(n) {
+                nextLevel = nextLevel.concat(n.children);
+              });
+              return expandLevel(nextLevel, currentDepth + 1);
+            }
+            var node = nodesAtLevel[idx++];
+            return expandNode(node, currentDepth).then(function() {
+              self.setState({ topics: allNodes.slice() });
+              return expandNext();
+            });
+          }
+          return expandNext();
+        }
+
+        // Start: expand root's children first
+        expandNode(root, 0).then(function() {
+          self.setState({ topics: allNodes.slice() });
+          return expandLevel(root.children, 1);
+        }).catch(function(err) {
+          if (err.name !== 'AbortError') {
+            console.error('Topic generation error:', err);
+            self.setState({
+              topicProgress: 'Error: ' + err.message,
+              topicGenerating: false
+            });
+          }
+        });
       }
 
       // ── Training data generation ────────────────────────────────────────
@@ -3952,7 +4057,9 @@
               ], signal)
               .then(function(content) {
                 try {
-                  var match = content.match(/\{[\s\S]*\}/);
+                  // Strip markdown code fences before extracting JSON
+                  var stripped = content.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+                  var match = stripped.match(/\{[\s\S]*\}/);
                   if (match) {
                     var parsed = JSON.parse(match[0]);
                     var messages = [];
@@ -4050,7 +4157,15 @@
 
       handleExportTopics() {
         if (this.state.topics.length === 0) return;
-        exportAsJsonl(this.state.topics, 'synth-topics.jsonl');
+        // Export with id, topic, and children ids
+        var exportData = this.state.topics.map(function(node) {
+          return {
+            id: node.id,
+            topic: node.topic,
+            children: (node.children || []).map(function(c) { return c.id; })
+          };
+        });
+        exportAsJsonl(exportData, 'synth-topics.jsonl');
       }
 
       handleExportData() {
@@ -4174,16 +4289,16 @@
         };
 
         var topicTreeStyle = {
-          maxHeight: '200px',
+          maxHeight: '400px',
           overflowY: 'auto',
-          padding: '8px',
+          padding: '12px',
           border: '1px solid var(--theme-border-color)',
           borderRadius: '6px',
           background: 'var(--theme-input-bg)',
           marginTop: '8px',
           fontSize: '12px',
           fontFamily: "'Consolas', 'Monaco', monospace",
-          lineHeight: '1.6',
+          lineHeight: '1.8',
         };
 
         var previewStyle = {
@@ -4211,18 +4326,64 @@
 
         var isGenerating = s.topicGenerating || s.dataGenerating;
 
-        // Render topic tree items
+        // Render topic tree in hierarchical markdown format
         var topicElements = [];
         if (s.topics.length > 0) {
-          s.topics.forEach(function(t, idx) {
-            var indent = '  '.repeat(t.depth);
-            var prefix = t.depth === 0 ? '📌 ' : '├─ ';
-            topicElements.push(
-              React.createElement('div', { key: idx, style: { paddingLeft: (t.depth * 16) + 'px' } },
-                prefix + t.topic
-              )
-            );
-          });
+          // Build tree rendering from the root node (first topic)
+          var renderNode = function(node, depth) {
+            if (depth === 0) {
+              // Root: heading
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { fontWeight: '700', fontSize: '14px', marginBottom: '4px' }
+                }, '# ' + node.topic)
+              );
+            } else if (depth === 1) {
+              // Level 1: section heading
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { fontWeight: '600', fontSize: '13px', marginTop: '8px', marginBottom: '2px' }
+                }, '## Level ' + depth + ': ' + node.topic)
+              );
+            } else if (depth === 2) {
+              // Level 2: top-level bullet
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { paddingLeft: '8px' }
+                }, '- ' + node.topic)
+              );
+            } else if (depth === 3) {
+              // Level 3: indented bullet
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { paddingLeft: '24px' }
+                }, '- ' + node.topic)
+              );
+            } else {
+              // Deeper levels: further indented
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { paddingLeft: (8 + (depth - 2) * 16) + 'px' }
+                }, '- ' + node.topic)
+              );
+            }
+            // Recurse into children
+            if (node.children && node.children.length > 0) {
+              node.children.forEach(function(child) {
+                renderNode(child, depth + 1);
+              });
+            }
+          };
+          // Find root (first node, or first with id 0)
+          var rootNode = s.topics[0];
+          if (rootNode) {
+            renderNode(rootNode, 0);
+          }
         }
 
         // Render preview of selected generated data
@@ -4246,17 +4407,25 @@
 
           // ── Section 1: Topic Generation ────────────────────────────────
           React.createElement('div', { style: sectionStyle },
-            React.createElement('div', { style: sectionTitleStyle }, '📊 Topic Generation (Graph Mode)'),
+            React.createElement('div', { style: sectionTitleStyle }, '🌳 Topic Generation (Tree Mode)'),
 
             React.createElement('label', { style: labelStyle }, 'Root Topic / Prompt'),
-            React.createElement('input', {
-              type: 'text',
-              value: s.topicPrompt,
-              onChange: function(e) { self.setState({ topicPrompt: e.target.value }); },
-              placeholder: 'e.g. Python programming fundamentals',
-              style: inputStyle,
-              disabled: isGenerating
-            }),
+            React.createElement('div', { style: { display: 'flex', gap: '8px', alignItems: 'flex-start' } },
+              React.createElement('input', {
+                type: 'text',
+                value: s.topicPrompt,
+                onChange: function(e) { self.setState({ topicPrompt: e.target.value }); },
+                placeholder: 'e.g. Python programming fundamentals',
+                style: Object.assign({}, inputStyle, { flex: 1 }),
+                disabled: isGenerating
+              }),
+              React.createElement('button', {
+                onClick: s.summarizing ? null : self.handleSummarizeFromOpenAPI,
+                disabled: isGenerating || s.summarizing,
+                style: (isGenerating || s.summarizing) ? disabledBtn : secondaryBtn,
+                title: 'Generate root topic from OpenAPI definition',
+              }, s.summarizing ? '⏳ Summarizing...' : '📋 Summarize from API')
+            ),
 
             React.createElement('div', { style: inlineRow },
               React.createElement('div', null,
@@ -4283,12 +4452,12 @@
               )
             ),
 
-            React.createElement('label', { style: labelStyle }, 'Topic Generation System Prompt (optional)'),
+            React.createElement('label', { style: labelStyle }, 'Topic Generation System Prompt'),
             React.createElement('textarea', {
               value: s.topicSystemPrompt,
               onChange: function(e) { self.setState({ topicSystemPrompt: e.target.value }); },
-              placeholder: 'Custom system prompt for topic generation (leave blank for default)',
-              style: textareaStyle,
+              placeholder: 'System prompt for topic generation (includes OpenAPI context when available)',
+              style: Object.assign({}, textareaStyle, { minHeight: '80px' }),
               disabled: isGenerating
             }),
 

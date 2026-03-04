@@ -1019,16 +1019,17 @@ def test_synthesizer_topic_generation():
     assert "topicDegree" in js_content
 
 
-def test_synthesizer_graph_mode():
-    """Verify synthesizer uses graph-based topic generation with BFS."""
+def test_synthesizer_tree_mode():
+    """Verify synthesizer uses tree-based topic generation."""
     client = TestClient(make_app())
 
     js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
 
-    # Graph mode uses queue-based BFS expansion
-    assert "queue" in js_content
-    assert "processLevel" in js_content
-    assert "parent" in js_content
+    # Tree mode uses level-by-level expansion with children
+    assert "expandLevel" in js_content
+    assert "expandNode" in js_content
+    assert "children" in js_content
+    assert "Tree Mode" in js_content
 
 
 def test_synthesizer_data_generation():
@@ -1123,4 +1124,47 @@ def test_synthesizer_stop_functionality():
     js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
 
     assert "handleStop" in js_content
+
+
+def test_synthesizer_summarize_from_openapi():
+    """Verify synthesizer has button to summarize root topic from OpenAPI."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    assert "handleSummarizeFromOpenAPI" in js_content
+    assert "Summarize from API" in js_content
+    assert "summarizing" in js_content
+
+
+def test_synthesizer_robust_json_extraction():
+    """Verify synthesizer has robust JSON extraction for LLM output."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    assert "extractJsonArray" in js_content
+    # Should strip markdown code fences
+    assert "```" in js_content
+
+
+def test_synthesizer_default_topic_system_prompt():
+    """Verify synthesizer pre-fills topic system prompt with OpenAPI context."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    assert "buildDefaultTopicSystemPrompt" in js_content
+    assert "topic generation assistant" in js_content
+
+
+def test_synthesizer_tree_export_format():
+    """Verify synthesizer exports topics with id and children fields."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    # Export maps nodes to id + children ids
+    assert "node.id" in js_content
+    assert "node.children" in js_content
     assert "AbortController" in js_content
