@@ -4113,7 +4113,7 @@
 
                 if (enableToolCalls && parsed.tool_name) {
                   // Assistant issues a tool call
-                  var callId = 'call_' + (existingData.length + completed + 1);
+                  var callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
                   messages.push({
                     role: 'assistant',
                     content: '',
