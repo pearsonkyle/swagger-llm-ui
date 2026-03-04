@@ -32,7 +32,6 @@ That's it! Visit `/docs`
 
 ## Configure LLM Settings
 
-This plugin uses client-side JavaScript to connect to your local LLM provider. You can configure it in the **LLM Settings** tab in the Swagger UI:
 - **Provider**: Choose your local LLM provider (Ollama, LM Studio, vLLM, or Custom)
 - **API URL**: Enter the API endpoint for your LLM (e.g. `http://localhost:1234/v1` for LMStudio)
 - **Test Connection**: Verify that the plugin can connect to your LLM provider and select a model from the drop down after.
