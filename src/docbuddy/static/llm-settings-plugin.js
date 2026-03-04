@@ -3753,6 +3753,83 @@
       '{openapi_context}';
   }
 
+  // ── JSON repair utilities for generated sample parsing ────────────────────
+  // Fixes unescaped control characters (newlines, tabs, CR) inside JSON string
+  // values — the most common reason LLM-generated JSON fails JSON.parse().
+  function repairJsonStrings(raw) {
+    var result = '';
+    var inString = false;
+    var i = 0;
+    while (i < raw.length) {
+      var ch = raw[i];
+      if (ch === '\\' && inString) {
+        // Already-escaped sequence: pass both chars through unchanged
+        result += ch + (raw[i + 1] || '');
+        i += 2;
+        continue;
+      }
+      if (ch === '"') {
+        inString = !inString;
+        result += ch;
+        i++;
+        continue;
+      }
+      if (inString) {
+        if (ch === '\n') { result += '\\n'; }
+        else if (ch === '\r') { result += '\\r'; }
+        else if (ch === '\t') { result += '\\t'; }
+        else { result += ch; }
+      } else {
+        result += ch;
+      }
+      i++;
+    }
+    return result;
+  }
+
+  // Regex-based field extractor used as a last resort when JSON repair still
+  // produces invalid JSON (e.g. nested unescaped quotes in field values).
+  function extractSampleFieldsRegex(raw) {
+    var result = {};
+    // Extract simple string fields
+    var reString = /"(user_message|tool_name|assistant_response)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+    var m;
+    while ((m = reString.exec(raw)) !== null) {
+      result[m[1]] = m[2].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    }
+    // Extract tool_arguments object (handles one level of nesting)
+    var argsMatch = raw.match(/"tool_arguments"\s*:\s*(\{[\s\S]*?\})\s*[,}]/);
+    if (argsMatch) {
+      try { result.tool_arguments = JSON.parse(argsMatch[1]); } catch (e) { /* ignore */ }
+    }
+    // Extract tool_result (may be a quoted string or a JSON object/array)
+    var trStr = raw.match(/"tool_result"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (trStr) {
+      result.tool_result = trStr[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    } else {
+      var trObj = raw.match(/"tool_result"\s*:\s*(\{[\s\S]*?\}|\[[\s\S]*?\])/);
+      if (trObj) {
+        try { result.tool_result = JSON.stringify(JSON.parse(trObj[1])); } catch (e) { result.tool_result = trObj[1]; }
+      }
+    }
+    return Object.keys(result).length > 0 ? result : null;
+  }
+
+  // Tries three strategies in order: direct parse → repair → regex extraction.
+  function tryParseSample(content) {
+    var stripped = content.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+    var match = stripped.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    var raw = match[0];
+    try {
+      return JSON.parse(raw);
+    } catch (e1) { /* fall through */ }
+    try {
+      return JSON.parse(repairJsonStrings(raw));
+    } catch (e2) { /* fall through */ }
+    return extractSampleFieldsRegex(raw);
+  }
+
   // ── Synthesizer panel component ───────────────────────────────────────────
   function SynthesizerPanelFactory(system) {
     var React = system.React;
@@ -4096,14 +4173,16 @@
               '- "tool_name": "api_request" (string)\n' +
               '- "tool_arguments": arguments object with "method", "path", and optionally "query_params", "path_params", "body" (object)\n' +
               '- "tool_result": a realistic JSON response the API would return (string)\n' +
-              '- "assistant_response": the assistant\'s final natural-language answer summarizing the result (string)';
+              '- "assistant_response": the assistant\'s final natural-language answer summarizing the result (string)\n' +
+              'Important: output must be valid JSON. Escape all special characters in string values (use \\n for newlines, \\" for quotes).';
           } else {
             userPrompt = 'Generate a training example about: "' + topic + '"\n\n' +
               (resolvedGenInstructions ? 'Instructions: ' + resolvedGenInstructions + '\n\n' : '') +
               (openapiContext ? 'API Context (for reference):\n' + openapiContext.substring(0, 2000) + '\n\n' : '') +
               'Return ONLY a JSON object with these fields:\n' +
               '- "user_message": a realistic user question (string)\n' +
-              '- "assistant_response": a detailed, helpful answer (string)';
+              '- "assistant_response": a detailed, helpful answer (string)\n' +
+              'Important: output must be valid JSON. Escape all special characters in string values (use \\n for newlines, \\" for quotes).';
           }
 
           return self._callLLM([
@@ -4112,11 +4191,8 @@
           ], signal)
           .then(function(content) {
             try {
-              // Strip markdown code fences before extracting JSON
-              var stripped = content.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
-              var match = stripped.match(/\{[\s\S]*\}/);
-              if (match) {
-                var parsed = JSON.parse(match[0]);
+              var parsed = tryParseSample(content);
+              if (parsed) {
                 var messages = [];
 
                 if (includeSystem) {
@@ -4171,7 +4247,7 @@
                 self.setState({ generatedData: existingData.slice() });
               }
             } catch (e) {
-              console.warn('Failed to parse generated data:', e);
+              console.warn('Failed to parse generated data (all strategies failed):', e, '\nRaw content:', content);
             }
             completed++;
             return generateNext();
