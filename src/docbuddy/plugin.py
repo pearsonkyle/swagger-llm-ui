@@ -30,7 +30,6 @@ def get_swagger_ui_html(
     swagger_js_url: str = "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.18.2/swagger-ui-bundle.js",
     swagger_css_url: str = "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.18.2/swagger-ui.css",
     theme_css_url: str = "/docbuddy-static/themes/light-theme.css",
-    llm_settings_js_url: str = "/docbuddy-static/llm-settings-plugin.js",
     llm_layout_js_url: str = "/docbuddy-static/llm-layout-plugin.js",
     debug: bool = False,
 ) -> HTMLResponse:
@@ -45,7 +44,6 @@ def get_swagger_ui_html(
         swagger_js_url: CDN URL for Swagger UI JS.
         swagger_css_url: CDN URL for the Swagger UI CSS.
         theme_css_url: URL for the theme CSS file.
-        llm_settings_js_url: URL for the LLM settings plugin JS.
         llm_layout_js_url: URL for the LLM layout plugin JS.
         debug: If True, disables template caching for development.
     """
@@ -63,7 +61,6 @@ def get_swagger_ui_html(
         swagger_js_url=swagger_js_url,
         swagger_css_url=swagger_css_url,
         theme_css_url=theme_css_url,
-        llm_settings_js_url=llm_settings_js_url,
         llm_layout_js_url=llm_layout_js_url,
     )
     return HTMLResponse(html)
@@ -155,7 +152,6 @@ def setup_docs(
             swagger_js_url=swagger_js_url,
             swagger_css_url=swagger_css_url,
             theme_css_url=theme_css_url,
-            llm_settings_js_url="/docbuddy-static/llm-settings-plugin.js",
             llm_layout_js_url="/docbuddy-static/llm-layout-plugin.js",
             debug=debug,
         )
