@@ -1104,6 +1104,10 @@
       }
 
       componentWillUnmount() {
+        if (this._currentCancelToken) {
+          this._currentCancelToken.abort();
+          this._currentCancelToken = null;
+        }
         if (this._fetchAbortController) {
           this._fetchAbortController.abort();
           this._fetchAbortController = null;
@@ -1471,6 +1475,7 @@
 
         self._currentCancelToken = new AbortController();
         self.setState({ isTyping: true });
+        window.dispatchEvent(new CustomEvent('docbuddy-chat-streaming', { detail: { streaming: true } }));
 
         var accumulated = "";
         var currentStreamMessageId = streamMsgId;
@@ -1498,6 +1503,7 @@
           }
           self._currentCancelToken = null;
           self.setState({ isTyping: false });
+          window.dispatchEvent(new CustomEvent('docbuddy-chat-streaming', { detail: { streaming: false } }));
           setTimeout(scrollToBottom, 30);
         };
 
@@ -1654,6 +1660,7 @@
                           editBody: JSON.stringify(args.body || {}, null, 2),
                           toolCallResponse: null,
                         });
+                        window.dispatchEvent(new CustomEvent('docbuddy-chat-streaming', { detail: { streaming: false } }));
                         self._currentCancelToken = null;
 
                         if (toolSettings.autoExecute) {
@@ -3616,6 +3623,1304 @@
     };
   }
 
+  // ── Synthesizer storage helpers ──────────────────────────────────────────────
+  var SYNTH_STORAGE_KEY = 'docbuddy-synthesizer';
+
+  function loadSynthSettings() {
+    try {
+      var data = localStorage.getItem(SYNTH_STORAGE_KEY);
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+    return null;
+  }
+
+  function saveSynthSettings(settings) {
+    try {
+      localStorage.setItem(SYNTH_STORAGE_KEY, JSON.stringify(settings));
+    } catch (e) {}
+  }
+
+  // ── Synthesizer: export JSONL (one JSON object per line) ───────────────────
+  function exportAsJsonl(data, filename) {
+    try {
+      var lines = data.map(function(item) { return JSON.stringify(item); });
+      var blob = new Blob([lines.join('\n')], { type: 'application/x-ndjson' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'export.jsonl';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to export JSONL:', e);
+    }
+  }
+
+  // ── Robust JSON extraction from LLM output ────────────────────────────────
+  function extractJsonArray(text) {
+    // Strip markdown code fences (```json ... ``` or ``` ... ```)
+    var stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+    // Try to find a JSON array
+    var match = stripped.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        var parsed = JSON.parse(match[0]);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        // Try cleaning: remove bold markers, stray asterisks, unbalanced quotes
+        var cleaned = match[0]
+          .replace(/\*\*/g, '')
+          .replace(/\*([^*]*)\*/g, '$1');
+        try {
+          var parsed2 = JSON.parse(cleaned);
+          if (Array.isArray(parsed2)) return parsed2;
+        } catch (e2) {
+          // Last resort: extract quoted strings
+          var strings = [];
+          var re = /"([^"]+)"/g;
+          var m;
+          while ((m = re.exec(stripped)) !== null) {
+            if (m[1].trim()) strings.push(m[1].trim());
+          }
+          if (strings.length > 0) return strings;
+        }
+      }
+    }
+    // Fallback: try parsing the whole stripped text
+    try {
+      var whole = JSON.parse(stripped);
+      if (Array.isArray(whole)) return whole;
+    } catch (e) {}
+    return [];
+  }
+
+  // ── Build default topic system prompt with OpenAPI context ────────────────
+  // ── Replace {openapi_context} placeholder with actual schema context ────────
+  function replaceOpenapiPlaceholder(text) {
+    if (!text || !text.includes('{openapi_context}')) return text;
+    if (_cachedOpenapiSchema) {
+      var context = buildOpenApiContext(_cachedOpenapiSchema);
+      return text.replace(/\{openapi_context\}/g, context);
+    }
+    return text.replace(/\{openapi_context\}/g, '(OpenAPI schema not yet loaded)');
+  }
+
+  function buildDefaultTopicSystemPrompt() {
+    var lines = [
+      'You are a topic generation assistant that creates structured, hierarchical topic trees for API training data.',
+      'Generate specific, diverse subtopics covering the full range of API capabilities, including:',
+      '- Core CRUD operations for each resource type',
+      '- Authentication, authorization, and permission scenarios',
+      '- Filtering, sorting, pagination, and search patterns',
+      '- Error handling and edge cases (invalid input, missing resources, conflicts)',
+      '- Multi-step workflows involving multiple endpoints or resources',
+      '- Batch operations and bulk actions where the API supports them',
+      'Balance coverage across these categories — do not cluster around happy-path read operations.',
+      'Focus on topics that represent real tasks an AI agent would be asked to perform.',
+      'Return ONLY a JSON array of strings, no other text or formatting.',
+      'Do not include markdown, bold markers, or links in the topic names.',
+      'Keep topics concise (under 80 characters each).',
+      '',
+      '{openapi_context}'
+    ];
+    return replaceOpenapiPlaceholder(lines.join('\n'));
+  }
+
+  function buildDefaultGenSystemPrompt() {
+    return 'You are a synthetic training data generator for fine-tuning an AI agent that uses a REST API.\n' +
+      'Your goal is to produce high-quality, realistic training examples that teach the agent to:\n' +
+      '- Understand natural language requests and map them to the correct API endpoints\n' +
+      '- Select the right HTTP method and construct valid parameters and request bodies\n' +
+      '- Interpret API responses and communicate results clearly to the user\n' +
+      '- Handle errors gracefully (404s, validation errors, permission denials)\n' +
+      'Use realistic user language — mix casual phrasing, technical requests, and occasionally ambiguous queries.\n' +
+      'When generating tool calls, use realistic sample data that matches the field types and constraints in the schema.\n' +
+      'Produce well-structured, plausible API responses that reflect real-world data for this API.\n\n' +
+      '{openapi_context}';
+  }
+
+  function buildDefaultGenInstructions() {
+    return 'Generate a realistic training example of a user asking an AI assistant to perform an API operation.\n' +
+      'Follow these guidelines:\n' +
+      '- Use natural, varied user language — some messages casual, some technical, some ambiguous\n' +
+      '- Include a mix of read operations (GET) and write operations (POST/PUT/PATCH/DELETE)\n' +
+      '- Vary complexity: some single-step requests, some requiring multiple parameters or chained logic\n' +
+      '- Use ONLY real endpoints from the API schema — do NOT invent endpoints or paths\n' +
+      '- The tool_arguments must include proper "method" and "path" fields matching real API endpoints\n' +
+      '- Include realistic query_params, path_params, or body data that match the API schema';
+  }
+
+  function buildDefaultOutputSystemPrompt() {
+    return 'You are a helpful API assistant. You help users interact with a REST API by making API calls on their behalf using the api_request tool.\n' +
+      'Always use the api_request tool to fulfill requests — never guess or fabricate API responses.\n' +
+      'After receiving a tool result, summarize the outcome clearly and concisely for the user.\n' +
+      'If an operation fails, explain the error and suggest how to resolve it.\n\n' +
+      '{openapi_context}';
+  }
+
+  // ── JSON repair utilities for generated sample parsing ────────────────────
+  // Fixes unescaped control characters (newlines, tabs, CR) inside JSON string
+  // values — the most common reason LLM-generated JSON fails JSON.parse().
+  function repairJsonStrings(raw) {
+    var result = '';
+    var inString = false;
+    var i = 0;
+    while (i < raw.length) {
+      var ch = raw[i];
+      if (ch === '\\' && inString) {
+        // Already-escaped sequence: pass both chars through unchanged
+        result += ch + (raw[i + 1] || '');
+        i += 2;
+        continue;
+      }
+      if (ch === '"') {
+        inString = !inString;
+        result += ch;
+        i++;
+        continue;
+      }
+      if (inString) {
+        if (ch === '\n') { result += '\\n'; }
+        else if (ch === '\r') { result += '\\r'; }
+        else if (ch === '\t') { result += '\\t'; }
+        else { result += ch; }
+      } else {
+        result += ch;
+      }
+      i++;
+    }
+    return result;
+  }
+
+  // Regex-based field extractor used as a last resort when JSON repair still
+  // produces invalid JSON (e.g. nested unescaped quotes in field values).
+  function extractSampleFieldsRegex(raw) {
+    var result = {};
+    // Extract simple string fields
+    var reString = /"(user_message|tool_name|assistant_response)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+    var m;
+    while ((m = reString.exec(raw)) !== null) {
+      result[m[1]] = m[2].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    }
+    // Extract tool_arguments object (handles one level of nesting)
+    var argsMatch = raw.match(/"tool_arguments"\s*:\s*(\{[\s\S]*?\})\s*[,}]/);
+    if (argsMatch) {
+      try { result.tool_arguments = JSON.parse(argsMatch[1]); } catch (e) { /* ignore */ }
+    }
+    // Extract tool_result (may be a quoted string or a JSON object/array)
+    var trStr = raw.match(/"tool_result"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (trStr) {
+      result.tool_result = trStr[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    } else {
+      var trObj = raw.match(/"tool_result"\s*:\s*(\{[\s\S]*?\}|\[[\s\S]*?\])/);
+      if (trObj) {
+        try { result.tool_result = JSON.stringify(JSON.parse(trObj[1])); } catch (e) { result.tool_result = trObj[1]; }
+      }
+    }
+    return Object.keys(result).length > 0 ? result : null;
+  }
+
+  // Tries three strategies in order: direct parse → repair → regex extraction.
+  function tryParseSample(content) {
+    var stripped = content.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+    var match = stripped.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    var raw = match[0];
+    try {
+      return JSON.parse(raw);
+    } catch (e1) { /* fall through */ }
+    try {
+      return JSON.parse(repairJsonStrings(raw));
+    } catch (e2) { /* fall through */ }
+    return extractSampleFieldsRegex(raw);
+  }
+
+  // ── Synthesizer panel component ───────────────────────────────────────────
+  function SynthesizerPanelFactory(system) {
+    var React = system.React;
+
+    return class SynthesizerPanel extends React.Component {
+      constructor(props) {
+        super(props);
+        var saved = loadSynthSettings() || {};
+        this.state = {
+          // Topic generation
+          topicPrompt: saved.topicPrompt || '',
+          topicDepth: saved.topicDepth != null ? saved.topicDepth : 3,
+          topicDegree: saved.topicDegree != null ? saved.topicDegree : 3,
+          topicSystemPrompt: saved.topicSystemPrompt || buildDefaultTopicSystemPrompt(),
+          topics: saved.topics || [],
+          topicGenerating: false,
+          topicProgress: '',
+          summarizing: false,
+
+          // Data generation
+          genSystemPrompt: saved.genSystemPrompt || buildDefaultGenSystemPrompt(),
+          genInstructions: saved.genInstructions || buildDefaultGenInstructions(),
+          numSamples: saved.numSamples != null ? saved.numSamples : 4,
+          includeSystemMessage: saved.includeSystemMessage !== false,
+          enableToolCalls: saved.enableToolCalls !== false,
+          outputSystemPrompt: saved.outputSystemPrompt || buildDefaultOutputSystemPrompt(),
+          generatedData: saved.generatedData || [],
+          dataGenerating: false,
+          dataProgress: '',
+
+          // Preview
+          inspectIdx: -1,  // -1 means no sample expanded
+        };
+        this._abortController = null;
+        this.handleGenerateTopics = this.handleGenerateTopics.bind(this);
+        this.handleSummarizeFromOpenAPI = this.handleSummarizeFromOpenAPI.bind(this);
+        this.handleGenerateData = this.handleGenerateData.bind(this);
+        this.handleStop = this.handleStop.bind(this);
+        this.handleExportTopics = this.handleExportTopics.bind(this);
+        this.handleExportData = this.handleExportData.bind(this);
+        this.handleClearTopics = this.handleClearTopics.bind(this);
+        this.handleClearData = this.handleClearData.bind(this);
+        this.handleDeleteSample = this.handleDeleteSample.bind(this);
+        this.handleInspectSample = this.handleInspectSample.bind(this);
+      }
+
+      componentDidMount() {
+        var self = this;
+        ensureOpenapiSchemaCached(function() {
+          // Update default prompts now that schema is available for {openapi_context}
+          var saved = loadSynthSettings();
+          var updates = {};
+          if (!saved || !saved.topicSystemPrompt) {
+            updates.topicSystemPrompt = buildDefaultTopicSystemPrompt();
+          }
+          if (!saved || !saved.genSystemPrompt) {
+            updates.genSystemPrompt = buildDefaultGenSystemPrompt();
+          }
+          if (!saved || !saved.outputSystemPrompt) {
+            updates.outputSystemPrompt = buildDefaultOutputSystemPrompt();
+          }
+          if (Object.keys(updates).length > 0) {
+            self.setState(updates);
+          }
+        });
+      }
+
+      componentDidUpdate(prevProps, prevState) {
+        // Persist key settings and generated data
+        if (prevState.topicPrompt !== this.state.topicPrompt ||
+            prevState.topicDepth !== this.state.topicDepth ||
+            prevState.topicDegree !== this.state.topicDegree ||
+            prevState.topicSystemPrompt !== this.state.topicSystemPrompt ||
+            prevState.genSystemPrompt !== this.state.genSystemPrompt ||
+            prevState.genInstructions !== this.state.genInstructions ||
+            prevState.numSamples !== this.state.numSamples ||
+            prevState.includeSystemMessage !== this.state.includeSystemMessage ||
+            prevState.enableToolCalls !== this.state.enableToolCalls ||
+            prevState.outputSystemPrompt !== this.state.outputSystemPrompt ||
+            prevState.topics !== this.state.topics ||
+            prevState.generatedData !== this.state.generatedData) {
+          saveSynthSettings({
+            topicPrompt: this.state.topicPrompt,
+            topicDepth: this.state.topicDepth,
+            topicDegree: this.state.topicDegree,
+            topicSystemPrompt: this.state.topicSystemPrompt,
+            genSystemPrompt: this.state.genSystemPrompt,
+            genInstructions: this.state.genInstructions,
+            numSamples: this.state.numSamples,
+            includeSystemMessage: this.state.includeSystemMessage,
+            enableToolCalls: this.state.enableToolCalls,
+            outputSystemPrompt: this.state.outputSystemPrompt,
+            topics: this.state.topics,
+            generatedData: this.state.generatedData,
+          });
+        }
+      }
+
+      componentWillUnmount() {
+        if (this._abortController) {
+          this._abortController.abort();
+          this._abortController = null;
+        }
+      }
+
+      // ── LLM call helper (non-streaming, returns content string) ─────────
+      _callLLM(messages, signal) {
+        var settings = loadFromStorage();
+        var baseUrl = (settings.baseUrl || '').replace(/\/+$/, '');
+        var headers = { 'Content-Type': 'application/json' };
+        if (settings.apiKey) {
+          headers['Authorization'] = 'Bearer ' + settings.apiKey;
+        }
+
+        var payload = {
+          messages: messages,
+          model: settings.modelId || 'llama3',
+          max_tokens: settings.maxTokens != null && settings.maxTokens !== '' ? parseInt(settings.maxTokens) : 4096,
+          temperature: settings.temperature != null && settings.temperature !== '' ? parseFloat(settings.temperature) : 0.7,
+          stream: false,
+        };
+
+        return fetch(baseUrl + '/chat/completions', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload),
+          signal: signal,
+        })
+        .then(function(res) {
+          if (!res.ok) {
+            return res.text().then(function(text) {
+              throw new Error('HTTP ' + res.status + ': ' + text);
+            });
+          }
+          return res.json();
+        })
+        .then(function(data) {
+          var choice = data.choices && data.choices[0];
+          if (choice && choice.message && choice.message.content) {
+            return choice.message.content;
+          }
+          throw new Error('No content in LLM response');
+        });
+      }
+
+      // ── Execute a live API call for synthesizer tool responses ─────────
+      _executeApiCall(args, signal) {
+        var method = (args.method || 'GET').toUpperCase();
+        var url = args.path || '/';
+
+        // Validate: must be relative path
+        if (!/^\//.test(url)) {
+          return Promise.resolve('Error: path must start with /');
+        }
+
+        // Substitute path params
+        try {
+          var pathParams = args.path_params || {};
+          Object.keys(pathParams).forEach(function(key) {
+            url = url.replace('{' + key + '}', encodeURIComponent(pathParams[key]));
+          });
+        } catch (e) {}
+
+        // Add query params
+        try {
+          var queryParams = args.query_params || {};
+          var queryKeys = Object.keys(queryParams);
+          if (queryKeys.length > 0) {
+            var qs = queryKeys.map(function(k) {
+              return encodeURIComponent(k) + '=' + encodeURIComponent(queryParams[k]);
+            }).join('&');
+            url += (url.indexOf('?') >= 0 ? '&' : '?') + qs;
+          }
+        } catch (e) {}
+
+        // Prepend origin
+        url = window.location.origin + url;
+
+        var headers = {};
+        var tSettings = loadToolSettings();
+        var toolApiKey = tSettings.apiKey && typeof tSettings.apiKey === 'string' ? tSettings.apiKey.trim() : '';
+        if (toolApiKey) {
+          headers['Authorization'] = 'Bearer ' + toolApiKey;
+        }
+
+        var hasBody = args.body && (method === 'POST' || method === 'PUT' || method === 'PATCH');
+        if (hasBody) {
+          headers['Content-Type'] = 'application/json';
+        }
+
+        var fetchOpts = { method: method, headers: headers };
+        if (hasBody) {
+          fetchOpts.body = JSON.stringify(args.body);
+        }
+        if (signal) {
+          fetchOpts.signal = signal;
+        }
+
+        return fetch(url, fetchOpts)
+          .then(function(res) {
+            return res.text().then(function(text) {
+              return text.substring(0, 4000);
+            });
+          })
+          .catch(function(err) {
+            if (err && err.name === 'AbortError') throw err;
+            return 'Error: ' + err.message;
+          });
+      }
+
+      // ── Summarize OpenAPI into root topic ──────────────────────────────
+      handleSummarizeFromOpenAPI() {
+        var self = this;
+        if (!_cachedOpenapiSchema) {
+          self.setState({ topicProgress: 'No OpenAPI schema available. Make sure the API is loaded.' });
+          return;
+        }
+        self.setState({ summarizing: true, topicProgress: 'Summarizing API...' });
+        var context = buildOpenApiContext(_cachedOpenapiSchema).substring(0, 3000);
+        var prompt = 'Based on the following API documentation, generate a concise root topic (one sentence) ' +
+          'that captures the main domain and purpose of this API. Return ONLY the topic text, nothing else.\n\n' + context;
+        this._callLLM([
+          { role: 'system', content: 'You summarize APIs into concise topic descriptions. Return only the topic text.' },
+          { role: 'user', content: prompt }
+        ])
+        .then(function(content) {
+          var topic = content.replace(/^["']|["']$/g, '').trim();
+          self.setState({ topicPrompt: topic, summarizing: false, topicProgress: 'Root topic generated from API' });
+        })
+        .catch(function(err) {
+          self.setState({ summarizing: false, topicProgress: 'Error summarizing: ' + err.message });
+        });
+      }
+
+      // ── Topic tree generation (tree mode) ───────────────────────────────
+      handleGenerateTopics() {
+        var self = this;
+        if (!this.state.topicPrompt.trim()) return;
+
+        this._abortController = new AbortController();
+        var signal = this._abortController.signal;
+        self.setState({ topicGenerating: true, topicProgress: 'Generating top-level topics...', topics: [] });
+
+        var depth = Math.max(1, Math.min(5, parseInt(this.state.topicDepth) || 3));
+        var degree = Math.max(1, Math.min(10, parseInt(this.state.topicDegree) || 3));
+        var rootPrompt = this.state.topicPrompt.trim();
+        var topicSysPrompt = replaceOpenapiPlaceholder(this.state.topicSystemPrompt.trim()) || buildDefaultTopicSystemPrompt();
+
+        // Tree structure: root -> children, each with id and children list
+        var nextId = 0;
+        var root = { id: nextId++, topic: rootPrompt, children: [] };
+        var allNodes = [root];
+
+        // Generate children for a single node, returning a promise
+        function expandNode(node, currentDepth) {
+          if (currentDepth >= depth || signal.aborted) {
+            return Promise.resolve();
+          }
+
+          self.setState({
+            topicProgress: 'Expanding "' + node.topic.substring(0, 40) + (node.topic.length > 40 ? '...' : '') + '" (level ' + (currentDepth + 1) + '/' + depth + ')',
+            topics: allNodes.slice()
+          });
+
+          var expandPrompt = 'Generate exactly ' + degree + ' specific subtopics for: "' + node.topic + '"\n\n' +
+            'The subtopics should be diverse, specific, and directly related to the parent topic.\n' +
+            'Return ONLY a JSON array of ' + degree + ' strings. Example: ["subtopic1", "subtopic2", "subtopic3"]';
+
+          return self._callLLM([
+            { role: 'system', content: topicSysPrompt },
+            { role: 'user', content: expandPrompt }
+          ], signal)
+          .then(function(content) {
+            var subtopics = extractJsonArray(content);
+            subtopics.slice(0, degree).forEach(function(st) {
+              if (typeof st === 'string' && st.trim()) {
+                var child = { id: nextId++, topic: st.trim(), children: [] };
+                node.children.push(child);
+                allNodes.push(child);
+              }
+            });
+          });
+        }
+
+        // Level-by-level expansion: generate all children at current level, then recurse
+        function expandLevel(nodesAtLevel, currentDepth) {
+          if (currentDepth >= depth || signal.aborted || nodesAtLevel.length === 0) {
+            self.setState({
+              topics: allNodes.slice(),
+              topicGenerating: false,
+              topicProgress: 'Generated ' + allNodes.length + ' topics in tree'
+            });
+            return Promise.resolve();
+          }
+
+          // Expand each node at this level sequentially so we can stream progress
+          var idx = 0;
+          function expandNext() {
+            if (idx >= nodesAtLevel.length || signal.aborted) {
+              // Collect all children at this level for next round
+              var nextLevel = [];
+              nodesAtLevel.forEach(function(n) {
+                nextLevel = nextLevel.concat(n.children);
+              });
+              return expandLevel(nextLevel, currentDepth + 1);
+            }
+            var node = nodesAtLevel[idx++];
+            return expandNode(node, currentDepth).then(function() {
+              self.setState({ topics: allNodes.slice() });
+              return expandNext();
+            });
+          }
+          return expandNext();
+        }
+
+        // Start: expand root's children first
+        expandNode(root, 0).then(function() {
+          self.setState({ topics: allNodes.slice() });
+          return expandLevel(root.children, 1);
+        }).catch(function(err) {
+          if (err.name !== 'AbortError') {
+            console.error('Topic generation error:', err);
+            self.setState({
+              topicProgress: 'Error: ' + err.message,
+              topicGenerating: false
+            });
+          }
+        });
+      }
+
+      // ── Training data generation (sequential, one at a time) ─────────────
+      handleGenerateData() {
+        var self = this;
+        var topics = this.state.topics;
+        if (!topics || topics.length === 0) {
+          self.setState({ dataProgress: 'Generate topics first!' });
+          return;
+        }
+
+        this._abortController = new AbortController();
+        var signal = this._abortController.signal;
+        var numSamples = Math.max(1, parseInt(this.state.numSamples) || 4);
+        var includeSystem = this.state.includeSystemMessage;
+        var enableToolCalls = this.state.enableToolCalls;
+        var outputSystemPrompt = this.state.outputSystemPrompt.trim();
+        var genInstructions = this.state.genInstructions.trim();
+
+        // Build system prompt with OpenAPI context for generation
+        var selectedPreset = loadFromStorage().systemPromptPreset || 'api_assistant';
+        var apiSystemPrompt = getSystemPromptForPreset(selectedPreset, _cachedOpenapiSchema);
+        // Replace {openapi_context} in all user-facing prompts at send time
+        var genSysPrompt = replaceOpenapiPlaceholder(this.state.genSystemPrompt.trim()) ||
+          'You are a synthetic training data generator for an AI agent. Create realistic, diverse question-answer pairs.';
+        var resolvedOutputSystemPrompt = replaceOpenapiPlaceholder(outputSystemPrompt) || apiSystemPrompt;
+        var resolvedGenInstructions = replaceOpenapiPlaceholder(genInstructions);
+
+        // Build OpenAPI context for tool call generation
+        var openapiContext = '';
+        var toolDef = null;
+        if (_cachedOpenapiSchema) {
+          openapiContext = buildOpenApiContext(_cachedOpenapiSchema);
+          if (enableToolCalls) {
+            toolDef = buildApiRequestTool(_cachedOpenapiSchema);
+          }
+        }
+
+        // Keep existing data and append new samples
+        var existingData = self.state.generatedData.slice();
+
+        self.setState({
+          dataGenerating: true,
+          dataProgress: 'Generating sample 1/' + numSamples + '...',
+        });
+
+        // Pick topics round-robin for the samples
+        var topicList = topics.filter(function(t) { return t.topic; }).map(function(t) { return t.topic; });
+        if (topicList.length === 0) topicList = ['general knowledge'];
+
+        var completed = 0;
+
+        function generateNext() {
+          if (completed >= numSamples || signal.aborted) {
+            self.setState({
+              dataGenerating: false,
+              dataProgress: 'Generated ' + completed + ' training example' + (completed !== 1 ? 's' : '')
+            });
+            return Promise.resolve();
+          }
+
+          var idx = completed;
+          var topicIdx = idx % topicList.length;
+          var topic = topicList[topicIdx];
+
+          self.setState({
+            dataProgress: 'Generating sample ' + (idx + 1) + '/' + numSamples + '...'
+          });
+
+          var userPrompt;
+          if (enableToolCalls && toolDef) {
+            userPrompt = 'Generate a realistic training example where a user asks about "' + topic + '" ' +
+              'and the assistant uses the api_request tool to fulfill the request.\n\n' +
+              'Available tool:\n' + JSON.stringify(toolDef, null, 2) + '\n\n' +
+              (resolvedGenInstructions ? 'Instructions: ' + resolvedGenInstructions + '\n\n' : '') +
+              'Return ONLY a JSON object with these fields:\n' +
+              '- "user_message": the user\'s natural-language request (string)\n' +
+              '- "tool_name": "api_request" (string)\n' +
+              '- "tool_arguments": arguments object with "method", "path", and optionally "query_params", "path_params", "body" (object). ' +
+              'Use ONLY real endpoints from the API schema above — do NOT invent endpoints.\n' +
+              'Important: output must be valid JSON. Escape all special characters in string values (use \\n for newlines, \\" for quotes).';
+          } else {
+            userPrompt = 'Generate a training example about: "' + topic + '"\n\n' +
+              (resolvedGenInstructions ? 'Instructions: ' + resolvedGenInstructions + '\n\n' : '') +
+              (openapiContext ? 'API Context (for reference):\n' + openapiContext.substring(0, 2000) + '\n\n' : '') +
+              'Return ONLY a JSON object with these fields:\n' +
+              '- "user_message": a realistic user question (string)\n' +
+              '- "assistant_response": a detailed, helpful answer (string)\n' +
+              'Important: output must be valid JSON. Escape all special characters in string values (use \\n for newlines, \\" for quotes).';
+          }
+
+          return self._callLLM([
+            { role: 'system', content: genSysPrompt },
+            { role: 'user', content: userPrompt }
+          ], signal)
+          .then(function(content) {
+            var parsed = tryParseSample(content);
+            if (!parsed || !parsed.user_message) {
+              console.warn('Failed to parse generated data:', content);
+              completed++;
+              return generateNext();
+            }
+
+            var toolArgs = parsed.tool_arguments || {};
+            if (typeof toolArgs === 'string') {
+              try { toolArgs = JSON.parse(toolArgs); } catch (e) { toolArgs = {}; }
+            }
+
+            // If tool calls enabled and we have valid arguments, execute live API call
+            if (enableToolCalls && parsed.tool_name && toolArgs.method && toolArgs.path) {
+              self.setState({
+                dataProgress: 'Generating sample ' + (idx + 1) + '/' + numSamples + ' (calling API)...'
+              });
+
+              return self._executeApiCall(toolArgs, signal).then(function(apiResponse) {
+                var callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+
+                // Now ask the LLM to write a natural-language summary of the API response
+                var summaryPrompt = 'The user asked: "' + (parsed.user_message || '') + '"\n' +
+                  'The assistant called the api_request tool with: ' + JSON.stringify(toolArgs) + '\n' +
+                  'The API responded with:\n' + apiResponse.substring(0, 3000) + '\n\n' +
+                  'Write a concise, helpful natural-language response that summarizes this API result for the user. ' +
+                  'Do NOT include any JSON or code — just a friendly assistant reply.';
+
+                return self._callLLM([
+                  { role: 'system', content: resolvedOutputSystemPrompt },
+                  { role: 'user', content: summaryPrompt }
+                ], signal).then(function(assistantResponse) {
+                  var messages = [];
+
+                  if (includeSystem) {
+                    messages.push({ role: 'system', content: resolvedOutputSystemPrompt });
+                  }
+
+                  messages.push({ role: 'user', content: parsed.user_message });
+
+                  // Assistant issues a tool call — arguments as object (not stringified)
+                  messages.push({
+                    role: 'assistant',
+                    content: '',
+                    tool_calls: [{
+                      id: callId,
+                      type: 'function',
+                      function: {
+                        name: parsed.tool_name,
+                        arguments: toolArgs
+                      }
+                    }]
+                  });
+
+                  // Tool responds with live API result
+                  messages.push({
+                    role: 'tool',
+                    name: parsed.tool_name,
+                    tool_call_id: callId,
+                    content: apiResponse
+                  });
+
+                  // Final assistant response (LLM-generated summary of real data)
+                  messages.push({
+                    role: 'assistant',
+                    content: assistantResponse || 'Here are the results.'
+                  });
+
+                  var example = { messages: messages };
+                  // Add tools definition
+                  if (toolDef) {
+                    example.tools = [toolDef];
+                  }
+
+                  existingData.push(example);
+                  self.setState({ generatedData: existingData.slice() });
+                  completed++;
+                  return generateNext();
+                });
+              });
+            } else {
+              // Non-tool-call path (plain Q&A)
+              var messages = [];
+              if (includeSystem) {
+                messages.push({ role: 'system', content: resolvedOutputSystemPrompt });
+              }
+              messages.push({ role: 'user', content: parsed.user_message || 'No question generated' });
+              messages.push({ role: 'assistant', content: parsed.assistant_response || 'No answer generated' });
+
+              existingData.push({ messages: messages });
+              self.setState({ generatedData: existingData.slice() });
+              completed++;
+              return generateNext();
+            }
+          })
+          .catch(function(err) {
+            if (err.name !== 'AbortError') {
+              console.warn('Generation error for sample ' + idx + ':', err);
+            }
+            completed++;
+            return generateNext();
+          });
+        }
+
+        generateNext();
+      }
+
+      handleStop() {
+        if (this._abortController) {
+          this._abortController.abort();
+          this._abortController = null;
+        }
+        this.setState({ topicGenerating: false, dataGenerating: false });
+      }
+
+      handleExportTopics() {
+        if (this.state.topics.length === 0) return;
+        // Export with id, topic, and children ids
+        var exportData = this.state.topics.map(function(node) {
+          return {
+            id: node.id,
+            topic: node.topic,
+            children: (node.children || []).map(function(c) { return c.id; })
+          };
+        });
+        exportAsJsonl(exportData, 'synth-topics.jsonl');
+      }
+
+      handleExportData() {
+        if (this.state.generatedData.length === 0) return;
+        exportAsJsonl(this.state.generatedData, 'synth-training-data.jsonl');
+      }
+
+      handleClearTopics() {
+        this.setState({ topics: [], topicProgress: '' });
+      }
+
+      handleClearData() {
+        this.setState({ generatedData: [], dataProgress: '', inspectIdx: -1 });
+      }
+
+      handleDeleteSample(index) {
+        this.setState(function(prev) {
+          var newData = prev.generatedData.slice();
+          newData.splice(index, 1);
+          var newInspect = prev.inspectIdx;
+          if (newInspect >= newData.length) newInspect = -1;
+          if (newInspect === index) newInspect = -1;
+          else if (newInspect > index) newInspect--;
+          return { generatedData: newData, inspectIdx: newInspect };
+        });
+      }
+
+      handleInspectSample(index) {
+        this.setState(function(prev) {
+          return { inspectIdx: prev.inspectIdx === index ? -1 : index };
+        });
+      }
+
+      render() {
+        var self = this;
+        var s = this.state;
+
+        var panelStyle = {
+          padding: '20px',
+          fontFamily: "'Inter', 'Segoe UI', sans-serif",
+          color: 'var(--theme-text-primary)',
+          maxWidth: '900px',
+          margin: '0 auto',
+        };
+
+        var sectionStyle = {
+          marginBottom: '24px',
+          padding: '16px',
+          border: '1px solid var(--theme-border-color)',
+          borderRadius: '8px',
+          background: 'var(--theme-panel-bg)',
+        };
+
+        var sectionTitleStyle = {
+          fontSize: '14px',
+          fontWeight: '600',
+          marginBottom: '12px',
+          color: 'var(--theme-text-primary)',
+        };
+
+        var labelStyle = {
+          display: 'block',
+          fontSize: '12px',
+          fontWeight: '500',
+          color: 'var(--theme-text-secondary)',
+          marginBottom: '4px',
+          marginTop: '8px',
+        };
+
+        var inputStyle = {
+          width: '100%',
+          padding: '8px 10px',
+          border: '1px solid var(--theme-border-color)',
+          borderRadius: '6px',
+          background: 'var(--theme-input-bg)',
+          color: 'var(--theme-text-primary)',
+          fontSize: '13px',
+          fontFamily: "'Inter', 'Segoe UI', sans-serif",
+          boxSizing: 'border-box',
+        };
+
+        var textareaStyle = Object.assign({}, inputStyle, {
+          resize: 'vertical',
+          minHeight: '60px',
+          fontFamily: "'Consolas', 'Monaco', monospace",
+          fontSize: '12px',
+        });
+
+        var btnStyle = {
+          padding: '8px 16px',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontSize: '12px',
+          fontWeight: '500',
+          marginRight: '8px',
+          marginTop: '8px',
+          transition: 'all 0.2s ease',
+        };
+
+        var primaryBtn = Object.assign({}, btnStyle, {
+          background: 'var(--theme-primary)',
+          color: '#fff',
+        });
+
+        var secondaryBtn = Object.assign({}, btnStyle, {
+          background: 'var(--theme-secondary)',
+          color: 'var(--theme-text-primary)',
+        });
+
+        var dangerBtn = Object.assign({}, btnStyle, {
+          background: '#dc2626',
+          color: '#fff',
+        });
+
+        var disabledBtn = Object.assign({}, btnStyle, {
+          background: 'var(--theme-secondary)',
+          color: 'var(--theme-text-secondary)',
+          cursor: 'not-allowed',
+          opacity: 0.6,
+        });
+
+        var inlineRow = {
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+        };
+
+        var smallInputStyle = Object.assign({}, inputStyle, {
+          width: '80px',
+        });
+
+        var progressStyle = {
+          fontSize: '12px',
+          color: 'var(--theme-text-secondary)',
+          marginTop: '8px',
+          fontStyle: 'italic',
+        };
+
+        var topicTreeStyle = {
+          maxHeight: '400px',
+          overflowY: 'auto',
+          padding: '12px',
+          border: '1px solid var(--theme-border-color)',
+          borderRadius: '6px',
+          background: 'var(--theme-input-bg)',
+          marginTop: '8px',
+          fontSize: '12px',
+          fontFamily: "'Consolas', 'Monaco', monospace",
+          lineHeight: '1.8',
+        };
+
+        var previewStyle = {
+          maxHeight: '300px',
+          overflowY: 'auto',
+          padding: '12px',
+          border: '1px solid var(--theme-border-color)',
+          borderRadius: '6px',
+          background: 'var(--theme-input-bg)',
+          marginTop: '8px',
+          fontSize: '12px',
+          fontFamily: "'Consolas', 'Monaco', monospace",
+          lineHeight: '1.6',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        };
+
+        var checkboxRow = {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginTop: '8px',
+          fontSize: '12px',
+        };
+
+        var isGenerating = s.topicGenerating || s.dataGenerating;
+
+        // Render topic tree in hierarchical markdown format
+        var topicElements = [];
+        if (s.topics.length > 0) {
+          // Build tree rendering from the root node (first topic)
+          var renderNode = function(node, depth) {
+            if (depth === 0) {
+              // Root: heading
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { fontWeight: '700', fontSize: '14px', marginBottom: '4px' }
+                }, '# ' + node.topic)
+              );
+            } else if (depth === 1) {
+              // Level 1: section heading
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { fontWeight: '600', fontSize: '13px', marginTop: '8px', marginBottom: '2px' }
+                }, node.topic)
+              );
+            } else if (depth === 2) {
+              // Level 2: top-level bullet
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { paddingLeft: '8px' }
+                }, '- ' + node.topic)
+              );
+            } else if (depth === 3) {
+              // Level 3: indented bullet
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { paddingLeft: '24px' }
+                }, '- ' + node.topic)
+              );
+            } else {
+              // Deeper levels: further indented
+              topicElements.push(
+                React.createElement('div', {
+                  key: 'node-' + node.id,
+                  style: { paddingLeft: (8 + (depth - 2) * 16) + 'px' }
+                }, '- ' + node.topic)
+              );
+            }
+            // Recurse into children
+            if (node.children && node.children.length > 0) {
+              node.children.forEach(function(child) {
+                renderNode(child, depth + 1);
+              });
+            }
+          };
+          // Find root (first node, or first with id 0)
+          var rootNode = s.topics[0];
+          if (rootNode) {
+            renderNode(rootNode, 0);
+          }
+        }
+
+        // Get user message summary for sample list
+        function getSampleSummary(sample) {
+          if (!sample || !sample.messages) return 'Empty sample';
+          var userMsg = sample.messages.find(function(m) { return m.role === 'user'; });
+          var text = userMsg ? userMsg.content : 'No user message';
+          return text.length > 80 ? text.substring(0, 80) + '...' : text;
+        }
+
+        return React.createElement('div', { style: panelStyle },
+          // Header
+          React.createElement('div', {
+            style: { marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+          },
+            React.createElement('h2', {
+              style: { margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--theme-text-primary)' }
+            }, '🧪 Synthetic Training Data Generator'),
+            React.createElement('span', {
+              style: { fontSize: '11px', color: 'var(--theme-text-secondary)' }
+            }, 'Uses LLM settings from Settings tab')
+          ),
+
+          // ── Section 1: Topic Generation ────────────────────────────────
+          React.createElement('div', { style: sectionStyle },
+            React.createElement('div', { style: sectionTitleStyle }, '🌳 Topic Generation (Tree Mode)'),
+
+            React.createElement('label', { style: labelStyle }, 'Root Topic / Prompt'),
+            React.createElement('div', { style: { display: 'flex', gap: '8px', alignItems: 'flex-start' } },
+              React.createElement('input', {
+                type: 'text',
+                value: s.topicPrompt,
+                onChange: function(e) { self.setState({ topicPrompt: e.target.value }); },
+                placeholder: 'e.g. Python programming fundamentals',
+                style: Object.assign({}, inputStyle, { flex: 1 }),
+                disabled: isGenerating
+              }),
+              React.createElement('button', {
+                onClick: s.summarizing ? null : self.handleSummarizeFromOpenAPI,
+                disabled: isGenerating || s.summarizing,
+                style: (isGenerating || s.summarizing) ? disabledBtn : secondaryBtn,
+                title: 'Generate root topic from OpenAPI definition',
+              }, s.summarizing ? '⏳ Summarizing...' : '📋 Summarize from API')
+            ),
+
+            React.createElement('div', { style: inlineRow },
+              React.createElement('div', null,
+                React.createElement('label', { style: labelStyle }, 'Depth'),
+                React.createElement('input', {
+                  type: 'number',
+                  value: s.topicDepth,
+                  min: 1, max: 5,
+                  onChange: function(e) { self.setState({ topicDepth: parseInt(e.target.value) || 1 }); },
+                  style: smallInputStyle,
+                  disabled: isGenerating
+                })
+              ),
+              React.createElement('div', null,
+                React.createElement('label', { style: labelStyle }, 'Degree'),
+                React.createElement('input', {
+                  type: 'number',
+                  value: s.topicDegree,
+                  min: 1, max: 10,
+                  onChange: function(e) { self.setState({ topicDegree: parseInt(e.target.value) || 1 }); },
+                  style: smallInputStyle,
+                  disabled: isGenerating
+                })
+              )
+            ),
+
+            React.createElement('label', { style: labelStyle }, 'Topic Generation System Prompt'),
+            React.createElement('textarea', {
+              value: s.topicSystemPrompt,
+              onChange: function(e) { self.setState({ topicSystemPrompt: e.target.value }); },
+              placeholder: 'System prompt for topic generation',
+              style: Object.assign({}, textareaStyle, { minHeight: '80px' }),
+              disabled: isGenerating
+            }),
+            React.createElement('div', {
+              style: { color: 'var(--theme-text-secondary)', fontSize: '10px', marginTop: '4px' }
+            }, 'Use {openapi_context} to insert your API schema. Replaced when generating data.'),
+
+            // Buttons
+            React.createElement('div', null,
+              React.createElement('button', {
+                onClick: s.topicGenerating ? null : self.handleGenerateTopics,
+                disabled: isGenerating || !s.topicPrompt.trim(),
+                style: (isGenerating || !s.topicPrompt.trim()) ? disabledBtn : primaryBtn,
+              }, s.topicGenerating ? '⏳ Generating...' : '🔄 Generate Topics'),
+
+              isGenerating && React.createElement('button', {
+                onClick: self.handleStop,
+                style: dangerBtn,
+              }, '⏹ Stop'),
+
+              s.topics.length > 0 && React.createElement('button', {
+                onClick: self.handleExportTopics,
+                style: secondaryBtn,
+                disabled: isGenerating,
+              }, '💾 Export Topics'),
+
+              s.topics.length > 0 && React.createElement('button', {
+                onClick: self.handleClearTopics,
+                style: secondaryBtn,
+                disabled: isGenerating,
+              }, '🗑 Clear')
+            ),
+
+            s.topicProgress && React.createElement('div', { style: progressStyle }, s.topicProgress),
+
+            // Topic tree display
+            s.topics.length > 0 && React.createElement('div', { style: topicTreeStyle }, topicElements)
+          ),
+
+          // ── Section 2: Data Generation ─────────────────────────────────
+          React.createElement('div', { style: sectionStyle },
+            React.createElement('div', { style: sectionTitleStyle }, '📝 Training Data Generation'),
+
+            React.createElement('label', { style: labelStyle }, 'Generation System Prompt'),
+            React.createElement('textarea', {
+              value: s.genSystemPrompt,
+              onChange: function(e) { self.setState({ genSystemPrompt: e.target.value }); },
+              placeholder: 'System prompt for the generation LLM',
+              style: textareaStyle,
+              disabled: isGenerating
+            }),
+            React.createElement('div', {
+              style: { color: 'var(--theme-text-secondary)', fontSize: '10px', marginTop: '4px' }
+            }, 'Use {openapi_context} to insert your API schema. Replaced when generating data.'),
+
+            React.createElement('label', { style: labelStyle }, 'Generation Instructions'),
+            React.createElement('textarea', {
+              value: s.genInstructions,
+              onChange: function(e) { self.setState({ genInstructions: e.target.value }); },
+              placeholder: 'Additional instructions for training data generation',
+              style: textareaStyle,
+              disabled: isGenerating
+            }),
+
+            React.createElement('label', { style: labelStyle }, 'Output System Prompt (embedded in each training example)'),
+            React.createElement('textarea', {
+              value: s.outputSystemPrompt,
+              onChange: function(e) { self.setState({ outputSystemPrompt: e.target.value }); },
+              placeholder: 'System prompt included in each generated training example',
+              style: textareaStyle,
+              disabled: isGenerating
+            }),
+            React.createElement('div', {
+              style: { color: 'var(--theme-text-secondary)', fontSize: '10px', marginTop: '4px' }
+            }, 'Use {openapi_context} to insert your API schema. Replaced when generating data.'),
+
+            React.createElement('div', { style: inlineRow },
+              React.createElement('div', null,
+                React.createElement('label', { style: labelStyle }, 'Num Samples'),
+                React.createElement('input', {
+                  type: 'number',
+                  value: s.numSamples,
+                  min: 1, max: 100,
+                  onChange: function(e) { self.setState({ numSamples: parseInt(e.target.value) || 1 }); },
+                  style: smallInputStyle,
+                  disabled: isGenerating
+                })
+              )
+            ),
+
+            React.createElement('div', { style: checkboxRow },
+              React.createElement('input', {
+                type: 'checkbox',
+                checked: s.includeSystemMessage,
+                onChange: function(e) { self.setState({ includeSystemMessage: e.target.checked }); },
+                id: 'synth-include-system',
+                disabled: isGenerating
+              }),
+              React.createElement('label', { htmlFor: 'synth-include-system' }, 'Include system message in training data')
+            ),
+
+            React.createElement('div', { style: checkboxRow },
+              React.createElement('input', {
+                type: 'checkbox',
+                checked: s.enableToolCalls,
+                onChange: function(e) { self.setState({ enableToolCalls: e.target.checked }); },
+                id: 'synth-enable-tools',
+                disabled: isGenerating
+              }),
+              React.createElement('label', { htmlFor: 'synth-enable-tools' }, 'Enable tool calling in training data (uses OpenAPI endpoints)')
+            ),
+
+            // Buttons
+            React.createElement('div', null,
+              React.createElement('button', {
+                onClick: s.dataGenerating ? null : self.handleGenerateData,
+                disabled: isGenerating || s.topics.length === 0,
+                style: (isGenerating || s.topics.length === 0) ? disabledBtn : primaryBtn,
+              }, s.dataGenerating ? '⏳ Generating...' : '🚀 Generate Training Data'),
+
+              isGenerating && React.createElement('button', {
+                onClick: self.handleStop,
+                style: dangerBtn,
+              }, '⏹ Stop'),
+
+              s.generatedData.length > 0 && React.createElement('button', {
+                onClick: self.handleExportData,
+                style: secondaryBtn,
+                disabled: isGenerating,
+              }, '💾 Export JSONL'),
+
+              s.generatedData.length > 0 && React.createElement('button', {
+                onClick: self.handleClearData,
+                style: secondaryBtn,
+                disabled: isGenerating,
+              }, '🗑 Clear')
+            ),
+
+            s.dataProgress && React.createElement('div', { style: progressStyle }, s.dataProgress)
+          ),
+
+          // ── Section 3: Generated Samples List ──────────────────────────
+          s.generatedData.length > 0 && React.createElement('div', { style: sectionStyle },
+            React.createElement('div', { style: sectionTitleStyle },
+              '📋 Generated Samples (' + s.generatedData.length + ')'
+            ),
+
+            React.createElement('div', {
+              style: { maxHeight: '500px', overflowY: 'auto' }
+            },
+              s.generatedData.map(function(sample, idx) {
+                var isExpanded = s.inspectIdx === idx;
+                var sampleItemStyle = {
+                  padding: '8px 12px',
+                  border: '1px solid var(--theme-border-color)',
+                  borderRadius: '6px',
+                  marginBottom: '6px',
+                  background: isExpanded ? 'var(--theme-input-bg)' : 'var(--theme-panel-bg)',
+                  fontSize: '12px',
+                };
+                var sampleHeaderStyle = {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  cursor: 'pointer',
+                };
+                var sampleTextStyle = {
+                  flex: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  color: 'var(--theme-text-primary)',
+                };
+                var smallBtnStyle = {
+                  padding: '3px 8px',
+                  border: '1px solid var(--theme-border-color)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  background: 'var(--theme-secondary)',
+                  color: 'var(--theme-text-primary)',
+                  flexShrink: 0,
+                };
+                var deleteBtnStyle = Object.assign({}, smallBtnStyle, {
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                });
+
+                return React.createElement('div', { key: 'sample-' + idx, style: sampleItemStyle },
+                  React.createElement('div', {
+                    style: sampleHeaderStyle,
+                    onClick: function() { self.handleInspectSample(idx); },
+                  },
+                    React.createElement('span', {
+                      style: { color: 'var(--theme-text-secondary)', fontWeight: '500', flexShrink: 0 }
+                    }, '#' + (idx + 1)),
+                    React.createElement('span', { style: sampleTextStyle }, getSampleSummary(sample)),
+                    React.createElement('button', {
+                      onClick: function(e) { e.stopPropagation(); self.handleInspectSample(idx); },
+                      style: smallBtnStyle,
+                      title: isExpanded ? 'Collapse' : 'Inspect',
+                    }, isExpanded ? '▲' : '🔍'),
+                    React.createElement('button', {
+                      onClick: function(e) { e.stopPropagation(); self.handleDeleteSample(idx); },
+                      style: deleteBtnStyle,
+                      title: 'Delete sample',
+                      disabled: isGenerating,
+                    }, '✕')
+                  ),
+                  isExpanded && React.createElement('div', { style: previewStyle },
+                    React.createElement('code', null, JSON.stringify(sample, null, 2))
+                  )
+                );
+              })
+            )
+          )
+        );
+      }
+    };
+  }
+
   // ── Plugin definition ───────────────────────────────────────────────────────
   window.LLMSettingsPlugin = function (system) {
     return {
@@ -3630,6 +4935,7 @@
         LLMSettingsPanel: LLMSettingsPanelFactory(system),
         ChatPanel: ChatPanelFactory(system),
         WorkflowPanel: WorkflowPanelFactory(system),
+        SynthesizerPanel: SynthesizerPanelFactory(system),
       },
     };
   };

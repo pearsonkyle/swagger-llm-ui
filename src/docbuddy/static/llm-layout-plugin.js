@@ -6,6 +6,13 @@
 
   // Storage key for persisting active tab
   var TAB_STORAGE_KEY = "docbuddy-active-tab";
+
+  // Inject pulse animation keyframe for streaming indicator
+  (function () {
+    var style = document.createElement("style");
+    style.textContent = "@keyframes docbuddy-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }";
+    document.head.appendChild(style);
+  })();
   
   window.LLMLayoutPlugin = function (system) {
     var React = system.React;
@@ -15,6 +22,7 @@
       var LLMSettingsPanel = system.getComponent("LLMSettingsPanel", true);
       var ChatPanel = system.getComponent("ChatPanel", true);
       var WorkflowPanel = system.getComponent("WorkflowPanel", true);
+      var SynthesizerPanel = system.getComponent("SynthesizerPanel", true);
 
       // Get saved tab preference, default to "api"
       var savedTab = localStorage.getItem(TAB_STORAGE_KEY) || "api";
@@ -44,6 +52,31 @@
         localStorage.setItem(TAB_STORAGE_KEY, activeTab);
       }, [activeTab]);
 
+      // When switching back to chat, scroll to bottom to show any messages streamed in background
+      React.useEffect(function () {
+        if (activeTab === "chat") {
+          requestAnimationFrame(function () {
+            var el = document.getElementById('llm-chat-messages');
+            if (el) el.scrollTop = el.scrollHeight;
+          });
+        }
+      }, [activeTab]);
+
+      // Track whether chat is actively streaming (for tab indicator)
+      var _streamState = React.useState(false);
+      var chatStreaming = _streamState[0];
+      var setChatStreaming = _streamState[1];
+
+      React.useEffect(function () {
+        var handler = function (e) {
+          setChatStreaming(e.detail && e.detail.streaming);
+        };
+        window.addEventListener('docbuddy-chat-streaming', handler);
+        return function () {
+          window.removeEventListener('docbuddy-chat-streaming', handler);
+        };
+      }, []);
+
       // Tab styles for 3 tabs (theme-aware)
       var tabStyle = function (tab) {
         return {
@@ -58,8 +91,8 @@
         };
       };
 
-      // Content area style - full height for chat, settings, and workflow
-      var isContained = activeTab === "chat" || activeTab === "settings" || activeTab === "workflow";
+      // Content area style - full height for chat, settings, workflow, and synthesizer
+      var isContained = activeTab === "chat" || activeTab === "settings" || activeTab === "workflow" || activeTab === "synthesizer";
       var contentStyle = {
         border: "1px solid var(--theme-border-color)",
         borderTop: "none",
@@ -101,13 +134,34 @@
             React.createElement(
               "button",
               { role: "tab", "aria-selected": activeTab === "chat", onClick: function () { setActiveTab("chat"); }, style: tabStyle("chat") },
-              "Chat"
+              "Chat",
+              chatStreaming && activeTab !== "chat"
+                ? React.createElement("span", {
+                    style: {
+                      display: "inline-block",
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      background: "#10b981",
+                      marginLeft: "6px",
+                      animation: "docbuddy-pulse 1.4s infinite ease-in-out",
+                      verticalAlign: "middle"
+                    },
+                    title: "Streaming in progress"
+                  })
+                : null
             ),
             // Workflow tab
             React.createElement(
               "button",
               { role: "tab", "aria-selected": activeTab === "workflow", onClick: function () { setActiveTab("workflow"); }, style: tabStyle("workflow") },
               "Workflow"
+            ),
+            // Synthesizer tab
+            React.createElement(
+              "button",
+              { role: "tab", "aria-selected": activeTab === "synthesizer", onClick: function () { setActiveTab("synthesizer"); }, style: tabStyle("synthesizer") },
+              "Synthesizer"
             ),
             // Settings tab
             React.createElement(
@@ -125,11 +179,20 @@
           // API api tab content
           activeTab === "api" ? React.createElement(BaseLayout, props) : null,
           
-          // Chat tab content
-          activeTab === "chat" ? React.createElement(ChatPanel, null) : null,
+          // Chat tab content (always mounted, hidden via CSS to preserve streaming state across tab switches)
+          React.createElement("div", { style: { display: activeTab === "chat" ? "block" : "none", height: "100%" } },
+            React.createElement(ChatPanel, null)
+          ),
           
-          // Workflow tab content
-          activeTab === "workflow" ? React.createElement(WorkflowPanel, null) : null,
+          // Workflow tab content (always mounted, hidden via CSS to preserve streaming state across tab switches)
+          React.createElement("div", { style: { display: activeTab === "workflow" ? "block" : "none", height: "100%" } },
+            React.createElement(WorkflowPanel, null)
+          ),
+
+          // Synthesizer tab content (always mounted, hidden via CSS to preserve state across tab switches)
+          React.createElement("div", { style: { display: activeTab === "synthesizer" ? "block" : "none", height: "100%" } },
+            React.createElement(SynthesizerPanel, null)
+          ),
 
           // LLM Settings tab content
           activeTab === "settings" ? React.createElement(LLMSettingsPanel, null) : null
