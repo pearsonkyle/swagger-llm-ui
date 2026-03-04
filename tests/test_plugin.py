@@ -1292,3 +1292,63 @@ def test_synthesizer_assistant_summary_from_api():
     # Should make a second LLM call to summarize the API response
     assert "summaryPrompt" in js_content
     assert "The API responded with" in js_content
+
+
+# ── Chat/Workflow tab persistence tests ──────────────────────────────────
+
+
+def test_chat_tab_css_persistence():
+    """Verify Chat tab uses CSS display hiding to persist across tab switches."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-layout-plugin.js").text
+
+    # Should use display-based hiding for ChatPanel, not conditional rendering
+    assert 'display: activeTab === "chat"' in js_content
+    # Should NOT have the old conditional pattern
+    assert 'activeTab === "chat" ? React.createElement(ChatPanel' not in js_content
+
+
+def test_workflow_tab_css_persistence():
+    """Verify Workflow tab uses CSS display hiding to persist across tab switches."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-layout-plugin.js").text
+
+    # Should use display-based hiding for WorkflowPanel
+    assert 'display: activeTab === "workflow"' in js_content
+    # Should NOT have the old conditional pattern
+    assert 'activeTab === "workflow" ? React.createElement(WorkflowPanel' not in js_content
+
+
+def test_chat_scroll_on_tab_return():
+    """Verify scrolling to bottom when returning to chat tab."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-layout-plugin.js").text
+
+    assert "llm-chat-messages" in js_content
+    assert "scrollHeight" in js_content
+
+
+def test_chat_streaming_event_dispatched():
+    """Verify ChatPanel dispatches streaming state events."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    assert "docbuddy-chat-streaming" in js_content
+
+
+def test_chat_cancel_token_cleanup():
+    """Verify ChatPanel cleans up _currentCancelToken in componentWillUnmount."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    assert "this._currentCancelToken.abort()" in js_content
+
+
+def test_chat_streaming_indicator_in_layout():
+    """Verify layout plugin shows streaming indicator on chat tab."""
+    client = TestClient(make_app())
+    js_content = client.get("/docbuddy-static/llm-layout-plugin.js").text
+
+    assert "chatStreaming" in js_content
+    assert "docbuddy-chat-streaming" in js_content
+    assert "docbuddy-pulse" in js_content

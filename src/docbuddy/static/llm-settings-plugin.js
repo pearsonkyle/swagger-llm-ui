@@ -1104,6 +1104,10 @@
       }
 
       componentWillUnmount() {
+        if (this._currentCancelToken) {
+          this._currentCancelToken.abort();
+          this._currentCancelToken = null;
+        }
         if (this._fetchAbortController) {
           this._fetchAbortController.abort();
           this._fetchAbortController = null;
@@ -1471,6 +1475,7 @@
 
         self._currentCancelToken = new AbortController();
         self.setState({ isTyping: true });
+        window.dispatchEvent(new CustomEvent('docbuddy-chat-streaming', { detail: { streaming: true } }));
 
         var accumulated = "";
         var currentStreamMessageId = streamMsgId;
@@ -1498,6 +1503,7 @@
           }
           self._currentCancelToken = null;
           self.setState({ isTyping: false });
+          window.dispatchEvent(new CustomEvent('docbuddy-chat-streaming', { detail: { streaming: false } }));
           setTimeout(scrollToBottom, 30);
         };
 
@@ -1654,6 +1660,7 @@
                           editBody: JSON.stringify(args.body || {}, null, 2),
                           toolCallResponse: null,
                         });
+                        window.dispatchEvent(new CustomEvent('docbuddy-chat-streaming', { detail: { streaming: false } }));
                         self._currentCancelToken = null;
 
                         if (toolSettings.autoExecute) {
