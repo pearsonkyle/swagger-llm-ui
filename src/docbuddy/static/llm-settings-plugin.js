@@ -3740,9 +3740,9 @@
       '- Use natural, varied user language — some messages casual, some technical, some ambiguous\n' +
       '- Include a mix of read operations (GET) and write operations (POST/PUT/PATCH/DELETE)\n' +
       '- Vary complexity: some single-step requests, some requiring multiple parameters or chained logic\n' +
-      '- Occasionally generate error scenarios: resource not found, invalid input, permission denied\n' +
-      '- The assistant must use the api_request tool to fulfill the request — never fabricate a response\n' +
-      '- After receiving the tool result, the assistant response should be concise and address the original request directly';
+      '- Use ONLY real endpoints from the API schema — do NOT invent endpoints or paths\n' +
+      '- The tool_arguments must include proper "method" and "path" fields matching real API endpoints\n' +
+      '- Include realistic query_params, path_params, or body data that match the API schema';
   }
 
   function buildDefaultOutputSystemPrompt() {
@@ -3975,6 +3975,71 @@
         });
       }
 
+      // ── Execute a live API call for synthesizer tool responses ─────────
+      _executeApiCall(args, signal) {
+        var method = (args.method || 'GET').toUpperCase();
+        var url = args.path || '/';
+
+        // Validate: must be relative path
+        if (!/^\//.test(url)) {
+          return Promise.resolve('Error: path must start with /');
+        }
+
+        // Substitute path params
+        try {
+          var pathParams = args.path_params || {};
+          Object.keys(pathParams).forEach(function(key) {
+            url = url.replace('{' + key + '}', encodeURIComponent(pathParams[key]));
+          });
+        } catch (e) {}
+
+        // Add query params
+        try {
+          var queryParams = args.query_params || {};
+          var queryKeys = Object.keys(queryParams);
+          if (queryKeys.length > 0) {
+            var qs = queryKeys.map(function(k) {
+              return encodeURIComponent(k) + '=' + encodeURIComponent(queryParams[k]);
+            }).join('&');
+            url += (url.indexOf('?') >= 0 ? '&' : '?') + qs;
+          }
+        } catch (e) {}
+
+        // Prepend origin
+        url = window.location.origin + url;
+
+        var headers = {};
+        var tSettings = loadToolSettings();
+        var toolApiKey = tSettings.apiKey && typeof tSettings.apiKey === 'string' ? tSettings.apiKey.trim() : '';
+        if (toolApiKey) {
+          headers['Authorization'] = 'Bearer ' + toolApiKey;
+        }
+
+        var hasBody = args.body && (method === 'POST' || method === 'PUT' || method === 'PATCH');
+        if (hasBody) {
+          headers['Content-Type'] = 'application/json';
+        }
+
+        var fetchOpts = { method: method, headers: headers };
+        if (hasBody) {
+          fetchOpts.body = JSON.stringify(args.body);
+        }
+        if (signal) {
+          fetchOpts.signal = signal;
+        }
+
+        return fetch(url, fetchOpts)
+          .then(function(res) {
+            return res.text().then(function(text) {
+              return text.substring(0, 4000);
+            });
+          })
+          .catch(function(err) {
+            if (err && err.name === 'AbortError') throw err;
+            return 'Error: ' + err.message;
+          });
+      }
+
       // ── Summarize OpenAPI into root topic ──────────────────────────────
       handleSummarizeFromOpenAPI() {
         var self = this;
@@ -4171,9 +4236,8 @@
               'Return ONLY a JSON object with these fields:\n' +
               '- "user_message": the user\'s natural-language request (string)\n' +
               '- "tool_name": "api_request" (string)\n' +
-              '- "tool_arguments": arguments object with "method", "path", and optionally "query_params", "path_params", "body" (object)\n' +
-              '- "tool_result": a realistic JSON response the API would return (string)\n' +
-              '- "assistant_response": the assistant\'s final natural-language answer summarizing the result (string)\n' +
+              '- "tool_arguments": arguments object with "method", "path", and optionally "query_params", "path_params", "body" (object). ' +
+              'Use ONLY real endpoints from the API schema above — do NOT invent endpoints.\n' +
               'Important: output must be valid JSON. Escape all special characters in string values (use \\n for newlines, \\" for quotes).';
           } else {
             userPrompt = 'Generate a training example about: "' + topic + '"\n\n' +
@@ -4190,26 +4254,47 @@
             { role: 'user', content: userPrompt }
           ], signal)
           .then(function(content) {
-            try {
-              var parsed = tryParseSample(content);
-              if (parsed) {
-                var messages = [];
+            var parsed = tryParseSample(content);
+            if (!parsed || !parsed.user_message) {
+              console.warn('Failed to parse generated data:', content);
+              completed++;
+              return generateNext();
+            }
 
-                if (includeSystem) {
-                  messages.push({
-                    role: 'system',
-                    content: resolvedOutputSystemPrompt
-                  });
-                }
+            var toolArgs = parsed.tool_arguments || {};
+            if (typeof toolArgs === 'string') {
+              try { toolArgs = JSON.parse(toolArgs); } catch (e) { toolArgs = {}; }
+            }
 
-                messages.push({
-                  role: 'user',
-                  content: parsed.user_message || 'No question generated'
-                });
+            // If tool calls enabled and we have valid arguments, execute live API call
+            if (enableToolCalls && parsed.tool_name && toolArgs.method && toolArgs.path) {
+              self.setState({
+                dataProgress: 'Generating sample ' + (idx + 1) + '/' + numSamples + ' (calling API)...'
+              });
 
-                if (enableToolCalls && parsed.tool_name) {
-                  // Assistant issues a tool call
-                  var callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+              return self._executeApiCall(toolArgs, signal).then(function(apiResponse) {
+                var callId = 'call_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+
+                // Now ask the LLM to write a natural-language summary of the API response
+                var summaryPrompt = 'The user asked: "' + (parsed.user_message || '') + '"\n' +
+                  'The assistant called the api_request tool with: ' + JSON.stringify(toolArgs) + '\n' +
+                  'The API responded with:\n' + apiResponse.substring(0, 3000) + '\n\n' +
+                  'Write a concise, helpful natural-language response that summarizes this API result for the user. ' +
+                  'Do NOT include any JSON or code — just a friendly assistant reply.';
+
+                return self._callLLM([
+                  { role: 'system', content: resolvedOutputSystemPrompt },
+                  { role: 'user', content: summaryPrompt }
+                ], signal).then(function(assistantResponse) {
+                  var messages = [];
+
+                  if (includeSystem) {
+                    messages.push({ role: 'system', content: resolvedOutputSystemPrompt });
+                  }
+
+                  messages.push({ role: 'user', content: parsed.user_message });
+
+                  // Assistant issues a tool call — arguments as object (not stringified)
                   messages.push({
                     role: 'assistant',
                     content: '',
@@ -4218,39 +4303,51 @@
                       type: 'function',
                       function: {
                         name: parsed.tool_name,
-                        arguments: typeof parsed.tool_arguments === 'string'
-                          ? parsed.tool_arguments
-                          : JSON.stringify(parsed.tool_arguments || {})
+                        arguments: toolArgs
                       }
                     }]
                   });
 
-                  // Tool responds
-                  var toolContent = typeof parsed.tool_result === 'string'
-                    ? parsed.tool_result
-                    : JSON.stringify(parsed.tool_result || {});
+                  // Tool responds with live API result
                   messages.push({
                     role: 'tool',
                     name: parsed.tool_name,
                     tool_call_id: callId,
-                    content: toolContent
+                    content: apiResponse
                   });
-                }
 
-                // Final assistant response
-                messages.push({
-                  role: 'assistant',
-                  content: parsed.assistant_response || 'No answer generated'
+                  // Final assistant response (LLM-generated summary of real data)
+                  messages.push({
+                    role: 'assistant',
+                    content: assistantResponse || 'Here are the results.'
+                  });
+
+                  var example = { messages: messages };
+                  // Add tools definition
+                  if (toolDef) {
+                    example.tools = [toolDef];
+                  }
+
+                  existingData.push(example);
+                  self.setState({ generatedData: existingData.slice() });
+                  completed++;
+                  return generateNext();
                 });
-
-                existingData.push({ messages: messages });
-                self.setState({ generatedData: existingData.slice() });
+              });
+            } else {
+              // Non-tool-call path (plain Q&A)
+              var messages = [];
+              if (includeSystem) {
+                messages.push({ role: 'system', content: resolvedOutputSystemPrompt });
               }
-            } catch (e) {
-              console.warn('Failed to parse generated data (all strategies failed):', e, '\nRaw content:', content);
+              messages.push({ role: 'user', content: parsed.user_message || 'No question generated' });
+              messages.push({ role: 'assistant', content: parsed.assistant_response || 'No answer generated' });
+
+              existingData.push({ messages: messages });
+              self.setState({ generatedData: existingData.slice() });
+              completed++;
+              return generateNext();
             }
-            completed++;
-            return generateNext();
           })
           .catch(function(err) {
             if (err.name !== 'AbortError') {

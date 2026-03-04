@@ -1247,3 +1247,48 @@ def test_synthesizer_state_persistence():
     # Should persist topics and generatedData in saveSynthSettings
     assert "topics: this.state.topics" in js_content
     assert "generatedData: this.state.generatedData" in js_content
+
+
+def test_synthesizer_tools_in_output():
+    """Verify synthesizer includes tools array in generated training data."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    # Should add tools definition to each example
+    assert "example.tools = [toolDef]" in js_content
+
+
+def test_synthesizer_arguments_as_object():
+    """Verify tool call arguments are output as objects, not stringified JSON."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    # Arguments should be the toolArgs object directly
+    assert "arguments: toolArgs" in js_content
+    # Should NOT have JSON.stringify for arguments in the data generation section
+    assert "JSON.stringify(parsed.tool_arguments" not in js_content
+
+
+def test_synthesizer_live_api_calls():
+    """Verify synthesizer calls live API endpoints for tool responses."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    # Should have _executeApiCall method
+    assert "_executeApiCall" in js_content
+    # Should call it during generation
+    assert "self._executeApiCall(toolArgs, signal)" in js_content
+
+
+def test_synthesizer_assistant_summary_from_api():
+    """Verify synthesizer generates assistant response from real API data."""
+    client = TestClient(make_app())
+
+    js_content = client.get("/docbuddy-static/llm-settings-plugin.js").text
+
+    # Should make a second LLM call to summarize the API response
+    assert "summaryPrompt" in js_content
+    assert "The API responded with" in js_content
