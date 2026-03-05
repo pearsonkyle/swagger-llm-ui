@@ -20,6 +20,28 @@
   window.DocBuddyPlugin = function (system) {
     var React = system.React;
 
+    // Error boundary to catch render errors in panels
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+      }
+      static getDerivedStateFromError(error) {
+        return { hasError: true, error: error };
+      }
+      componentDidCatch(error, info) {
+        console.error('DocBuddy Error:', error, info);
+      }
+      render() {
+        if (this.state.hasError) {
+          return React.createElement('div', {
+            style: { padding: '20px', color: '#ef4444', textAlign: 'center', fontFamily: "'Inter', sans-serif" }
+          }, 'Something went wrong. Please reload the page.');
+        }
+        return this.props.children;
+      }
+    }
+
     function LLMDocsLayout(props) {
       var BaseLayout = system.getComponent("BaseLayout", true);
       var LLMSettingsPanel = system.getComponent("LLMSettingsPanel", true);
@@ -207,17 +229,17 @@
 
           // Chat tab content (always mounted, hidden via CSS to preserve streaming state across tab switches)
           React.createElement("div", { style: { display: activeTab === "chat" ? "block" : "none", height: "100%" } },
-            React.createElement(ChatPanel, null)
+            React.createElement(ErrorBoundary, null, React.createElement(ChatPanel, null))
           ),
 
           // Workflow tab content (always mounted, hidden via CSS to preserve streaming state across tab switches)
           React.createElement("div", { style: { display: activeTab === "workflow" ? "block" : "none", height: "100%" } },
-            React.createElement(WorkflowPanel, null)
+            React.createElement(ErrorBoundary, null, React.createElement(WorkflowPanel, null))
           ),
 
           // LLM Settings tab content (always mounted, hidden via CSS to preserve state across tab switches)
           React.createElement("div", { style: { display: activeTab === "settings" ? "block" : "none", height: "100%", overflow: "auto" } },
-            React.createElement(LLMSettingsPanel, null)
+            React.createElement(ErrorBoundary, null, React.createElement(LLMSettingsPanel, null))
           )
         )
       );

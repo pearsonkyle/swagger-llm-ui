@@ -44,6 +44,9 @@
         this.sendToolResult = this.sendToolResult.bind(this);
         this.renderToolCallPanel = this.renderToolCallPanel.bind(this);
         this._copyTimeoutId = null;
+        this._debouncedSaveChatHistory = DB.debounce(function(history) {
+          DB.saveChatHistory(history);
+        }, 500);
 
         DB.initMarked();
       }
@@ -137,9 +140,9 @@
 
         var url = s.editPath;
 
-        if (!url || !/^\/[^\\]?/.test(url)) {
-          console.error('[Tool Call] Rejected non-relative path:', url);
-          var rejectObj = { status: 0, statusText: 'Blocked', body: 'Tool call path must be a relative URL starting with /' };
+        if (!url || !/^\//.test(url) || /\.\./.test(url)) {
+          console.error('[Tool Call] Rejected invalid path:', url);
+          var rejectObj = { status: 0, statusText: 'Blocked', body: 'Tool call path must be a relative URL starting with / and must not contain ".."' };
           self.setState({ toolCallResponse: rejectObj });
           self.sendToolResult(rejectObj);
           return;
@@ -150,7 +153,7 @@
           Object.keys(pathParams).forEach(function(key) {
             url = url.replace('{' + key + '}', encodeURIComponent(pathParams[key]));
           });
-        } catch (e) {}
+        } catch (e) { console.warn('Failed to parse path params:', e); }
 
         try {
           var queryParams = JSON.parse(s.editQueryParams || '{}');
@@ -161,7 +164,7 @@
             }).join('&');
             url += (url.indexOf('?') >= 0 ? '&' : '?') + qs;
           }
-        } catch (e) {}
+        } catch (e) { console.warn('Failed to parse query params:', e); }
 
         url = window.location.origin + url;
 
@@ -393,9 +396,10 @@
           systemPrompt += "\n\nUse the `api_request` tool via native tool calling when the user asks to call an API endpoint. Do NOT output tool calls as JSON text — the system handles tool execution automatically. If a tool call returns an error, you may retry with corrected parameters (up to 3 times).";
         }
 
+        var chatMessagesEl = null;
         var scrollToBottom = function() {
-          var el = document.getElementById('llm-chat-messages');
-          if (el) el.scrollTop = el.scrollHeight;
+          if (!chatMessagesEl) chatMessagesEl = document.getElementById('llm-chat-messages');
+          if (chatMessagesEl) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         };
 
         self.addMessage({ role: 'assistant', content: '', messageId: streamMsgId });
@@ -520,7 +524,7 @@
                             content: accumulated,
                             messageId: history[history.length - 1].messageId
                           }]);
-                          DB.saveChatHistory(updated);
+                          self._debouncedSaveChatHistory(updated);
                           return { chatHistory: updated };
                         }
                         return {};
@@ -583,13 +587,14 @@
                           editPathParams: JSON.stringify(args.path_params || {}, null, 2),
                           editBody: JSON.stringify(args.body || {}, null, 2),
                           toolCallResponse: null,
+                        }, function() {
+                          if (toolSettings.autoExecute) {
+                            self.handleExecuteToolCall();
+                          }
                         });
                         window.dispatchEvent(new CustomEvent('docbuddy-chat-streaming', { detail: { streaming: false } }));
                         self._currentCancelToken = null;
 
-                        if (toolSettings.autoExecute) {
-                          setTimeout(function() { self.handleExecuteToolCall(); }, 100);
-                        }
                         return;
                       }
                     }

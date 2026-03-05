@@ -1,0 +1,94 @@
+/* Swagger UI overrides - shared between all themes */
+
+body {
+  background-color: var(--theme-background);
+}
+
+.swagger-ui .topbar {
+  background-color: var(--theme-header-bg) !important;
+}
+
+.swagger-ui .info .title {
+  color: var(--theme-text-primary) !important;
+}
+
+.swagger-ui .info .description p,
+.swagger-ui .info .description {
+  color: var(--theme-text-secondary) !important;
+}
+
+.swagger-ui .scheme-container {
+  background-color: var(--theme-panel-bg) !important;
+  border-bottom: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui .opblock-tag {
+  color: var(--theme-text-primary) !important;
+  border-bottom: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui .opblock .opblock-summary-description {
+  color: var(--theme-text-secondary) !important;
+}
+
+.swagger-ui .opblock .opblock-section-header {
+  background-color: var(--theme-panel-bg) !important;
+  border-bottom: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui .opblock .opblock-section-header h4 {
+  color: var(--theme-text-primary) !important;
+}
+
+.swagger-ui table thead tr th {
+  color: var(--theme-text-primary) !important;
+  border-bottom: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui table tbody tr td {
+  color: var(--theme-text-primary) !important;
+  border-bottom: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui .parameter__name {
+  color: var(--theme-text-primary) !important;
+}
+
+.swagger-ui .parameter__type {
+  color: var(--theme-text-secondary) !important;
+}
+
+.swagger-ui .model-title {
+  color: var(--theme-text-primary) !important;
+}
+
+.swagger-ui section.models {
+  border: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui section.models h4 {
+  color: var(--theme-text-primary) !important;
+  border-bottom: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui .model {
+  color: var(--theme-text-primary) !important;
+}
+
+.swagger-ui select {
+  background-color: var(--theme-input-bg) !important;
+  color: var(--theme-text-primary) !important;
+  border: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui input[type="text"],
+.swagger-ui textarea {
+  background-color: var(--theme-input-bg) !important;
+  color: var(--theme-text-primary) !important;
+  border: 1px solid var(--theme-border-color) !important;
+}
+
+.swagger-ui .btn {
+  color: var(--theme-text-primary) !important;
+  border-color: var(--theme-border-color) !important;
+}

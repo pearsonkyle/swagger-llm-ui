@@ -390,7 +390,13 @@
     try {
       if (marked) {
         var html = marked.parse(text);
-        var sanitized = DOMPurify.sanitize(html);
+        var sanitized = DOMPurify.sanitize(html, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'a', 'code', 'pre',
+            'blockquote', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'span', 'div', 'img', 'del', 'sup', 'sub'],
+          ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'id', 'src', 'alt', 'title', 'width', 'height'],
+          ALLOW_DATA_ATTR: false
+        });
         if (/<script[\s>]/i.test(sanitized) || /\bon[a-z]+\s*=/i.test(sanitized)) {
           console.error('DOMPurify produced suspicious output — falling back to plain text');
           return _escapeHtml(text);
@@ -1281,5 +1287,8 @@
   };
   DocBuddy.llmOpenSettings = llmOpenSettings;
   window.llmOpenSettings = llmOpenSettings;
+
+  // Eagerly load system prompt config at module init (before DOMContentLoaded)
+  loadSystemPromptConfig();
 
 })();

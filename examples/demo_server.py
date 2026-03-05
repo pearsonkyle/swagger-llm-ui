@@ -3,6 +3,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from datetime import date
+import threading
 import sys
 import os
 
@@ -81,6 +82,7 @@ class InvoiceFilter(BaseModel):
 # ── In-Memory Storage ───────────────────────────────────────────────────────
 invoices: List[Invoice] = []
 invoice_counter = 0
+_invoice_lock = threading.Lock()
 
 # ── Endpoints ───────────────────────────────────────────────────────────────
 @app.get("/health", tags=["utility"])
@@ -147,21 +149,20 @@ async def create_invoice(invoice_data: CreateInvoice):
     Creates an invoice from the provided data and assigns it a unique ID.
     """
     global invoice_counter
-    
+
     # Calculate total amount
     total = sum(item.quantity * item.unit_price for item in invoice_data.items)
-    invoice_counter += 1
-    
-    new_invoice = Invoice(
-        id=invoice_counter,
-        created_at=date.today(),
-        total_amount=total,
-        **invoice_data.model_dump()
-    )
-    
-    # Add the calculated total
-    invoices.append(new_invoice)
-    
+
+    with _invoice_lock:
+        invoice_counter += 1
+        new_invoice = Invoice(
+            id=invoice_counter,
+            created_at=date.today(),
+            total_amount=total,
+            **invoice_data.model_dump()
+        )
+        invoices.append(new_invoice)
+
     return new_invoice
 
 @app.get("/invoices/{invoice_id}", response_model=Invoice, tags=["invoices"])

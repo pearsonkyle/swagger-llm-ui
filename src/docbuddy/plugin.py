@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
+from starlette.routing import Route
 
 
 # Locate package static/template directories
@@ -21,6 +22,9 @@ _route_lock = threading.Lock()
 
 # Track which apps have LLM docs setup to avoid duplicate routes
 _llm_apps: weakref.WeakSet = weakref.WeakSet()
+
+# Module-level Jinja2 environment (reused across requests)
+_jinja_env = Environment(loader=FileSystemLoader(str(_TEMPLATES_DIR)), autoescape=True)
 
 
 def get_swagger_ui_html(
@@ -49,7 +53,7 @@ def get_swagger_ui_html(
         theme_css_url: URL for the theme CSS file.
         debug: If True, disables template caching for development.
     """
-    env = Environment(loader=FileSystemLoader(str(_TEMPLATES_DIR)), autoescape=True)
+    env = _jinja_env
 
     # Disable cache if in debug mode
     if debug:
@@ -111,7 +115,6 @@ def setup_docs(
             return
 
         # Safely remove any existing docs/redoc routes registered by FastAPI
-        from starlette.routing import Route
 
         # Filter routes while avoiding concurrent modification issues
         original_routes = list(app.router.routes)

@@ -45,3 +45,4 @@ Repository = "https://github.com/pearsonkyle/docbuddy"
 packages = ["src/docbuddy"]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]

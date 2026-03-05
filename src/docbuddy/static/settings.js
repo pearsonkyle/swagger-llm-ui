@@ -64,14 +64,12 @@
       }
 
       componentDidMount() {
+        // Theme is already applied globally by core.js DOMContentLoaded handler.
+        // Only sync local state from storage for the settings form.
         var stored = DB.loadTheme();
         this.setState({
           theme: stored.theme || DB.DEFAULT_STATE.theme,
           customColors: stored.customColors || {}
-        });
-
-        requestAnimationFrame(function() {
-          window.applyLLMTheme(stored.theme || DB.DEFAULT_STATE.theme, stored.customColors);
         });
       }
 
@@ -99,9 +97,13 @@
 
         var baseUrl = (settings.baseUrl || "").replace(/\/+$/, "");
 
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+
         fetch(baseUrl + "/models", {
           method: 'GET',
-          headers: headers
+          headers: headers,
+          signal: controller.signal
         })
           .then(function (res) {
             if (!res.ok) {
@@ -112,6 +114,7 @@
             return res.json();
           })
           .then(function (data) {
+            clearTimeout(timeoutId);
             if (data && data.error) {
               throw new Error(data.details || data.error);
             }
@@ -136,7 +139,8 @@
             DB.dispatchAction(system, 'setConnectionStatus', "connected");
           })
           .catch(function (err) {
-            var errorMsg = err.message || "Connection failed";
+            clearTimeout(timeoutId);
+            var errorMsg = err.name === 'AbortError' ? 'Connection timed out (10s)' : (err.message || "Connection failed");
             self.setState({ connectionStatus: "error", lastError: errorMsg });
             DB.dispatchAction(system, 'setConnectionStatus', "error");
           });

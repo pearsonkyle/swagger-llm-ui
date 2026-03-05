@@ -14,4 +14,4 @@ env/
 .mypy_cache/
 .ruff_cache/
 *.pyo
-.DS_STORE
+.DS_Store

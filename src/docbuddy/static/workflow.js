@@ -360,12 +360,12 @@
 
           function executeToolCall(tc, toolCallsList, callback) {
             var args = {};
-            try { args = JSON.parse(tc.function.arguments || '{}'); } catch (e) {}
+            try { args = JSON.parse(tc.function.arguments || '{}'); } catch (e) { console.warn('Failed to parse tool call arguments:', e); }
             var method = args.method || 'GET';
             var url = args.path || '';
 
-            if (!url || !/^\/[^\\]?/.test(url)) {
-              callback('Error: Tool call path must be a relative URL starting with /');
+            if (!url || !/^\//.test(url) || /\.\./.test(url)) {
+              callback('Error: Tool call path must be a relative URL starting with / and must not contain ".."');
               return;
             }
 
@@ -374,7 +374,7 @@
               Object.keys(pathParams).forEach(function(key) {
                 url = url.replace('{' + key + '}', encodeURIComponent(pathParams[key]));
               });
-            } catch (e) {}
+            } catch (e) { console.warn('Failed to apply path params:', e); }
 
             try {
               var queryParams = args.query_params || {};
@@ -385,7 +385,7 @@
                 }).join('&');
                 url += (url.indexOf('?') >= 0 ? '&' : '?') + qs;
               }
-            } catch (e) {}
+            } catch (e) { console.warn('Failed to apply query params:', e); }
 
             url = window.location.origin + url;
 
@@ -412,14 +412,14 @@
 
             fetch(url, fetchOpts)
               .then(function(res) {
-                if (self.state.aborted) return;
+                if (self.state.aborted) { callback('(aborted)'); return; }
                 return res.text().then(function(text) {
-                  if (self.state.aborted) return;
+                  if (self.state.aborted) { callback('(aborted)'); return; }
                   callback('Status: ' + res.status + ' ' + res.statusText + '\n\n' + text.substring(0, 4000));
                 });
               })
               .catch(function(err) {
-                if (err && err.name === 'AbortError') return;
+                if (err && err.name === 'AbortError') { callback('(aborted)'); return; }
                 callback('Error: ' + err.message);
               });
           }
