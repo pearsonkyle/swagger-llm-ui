@@ -58,7 +58,8 @@ def get_swagger_ui_html(
     # Disable cache if in debug mode
     if debug:
         env.auto_reload = True
-        env.cache.clear()
+        if env.cache is not None:
+            env.cache.clear()
 
     template = env.get_template("swagger_ui.html")
     html = template.render(
