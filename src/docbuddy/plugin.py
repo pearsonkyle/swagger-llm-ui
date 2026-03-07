@@ -37,6 +37,7 @@ def get_swagger_ui_html(
     swagger_css_sri: str = "sha384-rcbEi6xgdPk0iWkAQzT2F3FeBJXdG+ydrawGlfHAFIZG7wU6aKbQaRewysYpmrlW",
     theme_css_url: str = "/docbuddy-static/themes/light-theme.css",
     debug: bool = False,
+    version: Optional[str] = None,
 ) -> HTMLResponse:
     """Return an HTMLResponse with the custom Swagger UI + LLM settings panel.
 
@@ -61,6 +62,14 @@ def get_swagger_ui_html(
         if env.cache is not None:
             env.cache.clear()
 
+    # Import version here to avoid circular import with __init__.py
+    from importlib.metadata import version as get_version, PackageNotFoundError
+
+    try:
+        pkg_version = get_version("docbuddy")
+    except PackageNotFoundError:
+        pkg_version = "unknown"
+
     template = env.get_template("swagger_ui.html")
     html = template.render(
         title=title,
@@ -70,6 +79,7 @@ def get_swagger_ui_html(
         swagger_js_sri=swagger_js_sri,
         swagger_css_sri=swagger_css_sri,
         theme_css_url=theme_css_url,
+        version=version or pkg_version,
     )
     return HTMLResponse(html)
 

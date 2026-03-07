@@ -279,6 +279,11 @@ Changing this order will break the UI.
 3. **Check theme compatibility** — Test both dark and light themes
 4. **Test concurrent setup** — Verify thread safety with multiple apps
 
+### Testing Workflow
+1. **Run tests after each change** — After making any code modifications, run `pytest tests/ -v` to verify nothing is broken
+2. **Verify before completion** — Always confirm all tests pass before using `attempt_completion` to finalize a task
+3. **Fix circular imports early** — When modifying module imports, check for circular import issues between `__init__.py` and other modules
+
 ### JavaScript Patterns
 1. Use `var` for function-scoped variables (older pattern, compatible with all browsers)
 2. Always use `AbortController` for cancellable async operations

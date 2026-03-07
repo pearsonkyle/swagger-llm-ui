@@ -40,6 +40,9 @@
     <script src="/docbuddy-static/workflow.js"></script>
     <script src="/docbuddy-static/plugin.js"></script>
 
+    <!-- Inject docbuddy version for settings panel -->
+    <script>window.DOCBUDDY_VERSION = "{{ version }}";</script>
+
     <style>
       /* LLM Panel CSS - scoped to avoid conflicts */
       #llm-settings-panel {

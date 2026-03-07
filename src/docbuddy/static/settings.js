@@ -566,6 +566,52 @@
           toolCallSettings
         );
 
+        // Version footer with link to GitHub repo
+        var versionFooter = React.createElement(
+          "div",
+          {
+            style: {
+              marginTop: "24px",
+              paddingTop: "16px",
+              borderTop: "1px solid var(--theme-border-color)",
+              textAlign: "center",
+            },
+          },
+          React.createElement(
+            "a",
+            {
+              href: "https://github.com/pearsonkyle/docbuddy",
+              target: "_blank",
+              rel: "noopener noreferrer",
+              style: {
+                color: "var(--theme-text-secondary)",
+                fontSize: "12px",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              },
+            },
+            React.createElement("span", null, "docbuddy v"),
+            React.createElement(
+              "span",
+              {
+                style: {
+                  color: "var(--theme-text-primary)",
+                  fontWeight: "500",
+                },
+              },
+              window.DOCBUDDY_VERSION || "unknown"
+            ),
+            React.createElement("span", null, " • "),
+            React.createElement(
+              "span",
+              { style: { color: "var(--theme-primary)" } },
+              "View on GitHub →"
+            )
+          )
+        );
+
         return React.createElement(
           "div",
           {
@@ -575,7 +621,8 @@
               minHeight: "400px",
             },
           },
-          bodyContent
+          bodyContent,
+          versionFooter
         );
       }
     };
