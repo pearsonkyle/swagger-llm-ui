@@ -141,9 +141,9 @@
         var url = s.editPath;
 
         try { url = decodeURIComponent(url); } catch (e) {}
-        if (!url || !/^\//.test(url) || /\.\./.test(url)) {
+        if (!url || !/^\//.test(url)) {
           console.error('[Tool Call] Rejected invalid path:', url);
-          var rejectObj = { status: 0, statusText: 'Blocked', body: 'Tool call path must be a relative URL starting with / and must not contain ".."' };
+          var rejectObj = { status: 0, statusText: 'Blocked', body: 'Tool call path must be a relative URL starting with /' };
           self.setState({ toolCallResponse: rejectObj });
           self.sendToolResult(rejectObj);
           return;
@@ -154,7 +154,15 @@
           Object.keys(pathParams).forEach(function(key) {
             url = url.replace('{' + key + '}', encodeURIComponent(pathParams[key]));
           });
-        } catch (e) { console.warn('Failed to parse path params:', e); }
+          // Re-validate after path params substitution to prevent bypass via path param values
+          if (/\.\./.test(url)) {
+            console.error('[Tool Call] Rejected path with ".." after param substitution:', url);
+            var rejectObj = { status: 0, statusText: 'Blocked', body: 'Tool call path must not contain ".."' };
+            self.setState({ toolCallResponse: rejectObj });
+            self.sendToolResult(rejectObj);
+            return;
+          }
+        } catch (e) { console.warn('Failed to apply path params:', e); }
 
         try {
           var queryParams = JSON.parse(s.editQueryParams || '{}');

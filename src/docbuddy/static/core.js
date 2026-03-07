@@ -381,14 +381,34 @@
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\n/g, '<br>');
   }
 
-  // Register DOMPurify hook to force rel="noopener noreferrer" on all links
-  // with target attribute (prevents tabnapping via window.opener)
+  // Register DOMPurify hook to force rel="noopener noreferrer" on links
+  // with target="_blank" (prevents tabnapping via window.opener) while
+  // preserving any existing rel directives (e.g., "nofollow").
   var _domPurifyHooksRegistered = false;
   function _ensureDomPurifyHooks() {
     if (_domPurifyHooksRegistered || typeof DOMPurify === 'undefined') return;
     DOMPurify.addHook('afterSanitizeAttributes', function(node) {
       if (node.tagName === 'A') {
-        node.setAttribute('rel', 'noopener noreferrer');
+        var target = node.getAttribute('target');
+        if (target && target.toLowerCase() === '_blank') {
+          var existingRel = node.getAttribute('rel') || '';
+          var tokens = existingRel ? existingRel.split(/\s+/) : [];
+          var relSet = {};
+          for (var i = 0; i < tokens.length; i++) {
+            if (tokens[i]) {
+              relSet[tokens[i]] = true;
+            }
+          }
+          relSet.noopener = true;
+          relSet.noreferrer = true;
+          var combined = [];
+          for (var key in relSet) {
+            if (Object.prototype.hasOwnProperty.call(relSet, key)) {
+              combined.push(key);
+            }
+          }
+          node.setAttribute('rel', combined.join(' '));
+        }
       }
     });
     _domPurifyHooksRegistered = true;

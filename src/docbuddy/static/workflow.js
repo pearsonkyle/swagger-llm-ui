@@ -413,8 +413,8 @@
             var url = args.path || '';
 
             try { url = decodeURIComponent(url); } catch (e) {}
-            if (!url || !/^\//.test(url) || /\.\./.test(url)) {
-              callback('Error: Tool call path must be a relative URL starting with / and must not contain ".."');
+            if (!url || !/^\//.test(url)) {
+              callback('Error: Tool call path must be a relative URL starting with /');
               return;
             }
 
@@ -423,6 +423,11 @@
               Object.keys(pathParams).forEach(function(key) {
                 url = url.replace('{' + key + '}', encodeURIComponent(pathParams[key]));
               });
+              // Re-validate after path params substitution to prevent bypass via path param values
+              if (/\.\./.test(url)) {
+                callback('Error: Tool call path must not contain ".."');
+                return;
+              }
             } catch (e) { console.warn('Failed to apply path params:', e); }
 
             try {
