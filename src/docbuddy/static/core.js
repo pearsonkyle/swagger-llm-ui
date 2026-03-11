@@ -495,12 +495,13 @@
 
   function ensureOpenapiSchemaCached(onDone) {
     var targetUrl = window.DOCBUDDY_OPENAPI_URL || "/openapi.json";
-    // If the URL changed since last fetch, invalidate the cache
-    if (DocBuddy._cachedOpenapiSchema && DocBuddy._schemaFetchUrl === targetUrl) {
-      if (onDone) onDone(DocBuddy._cachedOpenapiSchema);
-      return;
-    }
-    if (DocBuddy._cachedOpenapiSchema && DocBuddy._schemaFetchUrl !== targetUrl) {
+    if (DocBuddy._cachedOpenapiSchema) {
+      if (DocBuddy._schemaFetchUrl === targetUrl) {
+        // Cache hit — same URL, return immediately
+        if (onDone) onDone(DocBuddy._cachedOpenapiSchema);
+        return;
+      }
+      // URL changed — invalidate stale cache
       DocBuddy._cachedOpenapiSchema = null;
       DocBuddy._openapiSchemaFetchPromise = null;
     }

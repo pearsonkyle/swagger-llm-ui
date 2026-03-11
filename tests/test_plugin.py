@@ -1713,9 +1713,8 @@ def test_standalone_page_clears_history_on_load():
     from pathlib import Path
 
     html = (Path(__file__).parent.parent / "docs" / "index.html").read_text()
-    assert "docbuddy-chat-history" in html
-    assert "docbuddy-agent-history" in html
-    assert "localStorage.removeItem" in html
+    assert "localStorage.removeItem('docbuddy-chat-history')" in html
+    assert "localStorage.removeItem('docbuddy-agent-history')" in html
 
 
 # ── Standalone page tests ─────────────────────────────────────────────────────
