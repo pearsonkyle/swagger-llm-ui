@@ -8,7 +8,7 @@
 
   // ── Constants ─────────────────────────────────────────────────────────────
   var MAX_TOOL_CALL_RETRIES = 3;
-  var MAX_AGENT_ITERATIONS = 5;
+  var MAX_AGENT_ITERATIONS = 20;
   var MAX_TOOL_RESPONSE_LENGTH = 4000;
 
   // ── Agent panel component ─────────────────────────────────────────────────
@@ -27,6 +27,7 @@
           agentHistory: DB.loadAgentHistory(),
           copiedId: null,
           pendingToolCall: null,
+          pendingToolCallQueue: [],
           editMethod: 'GET',
           editPath: '',
           editQueryParams: '{}',
@@ -35,6 +36,7 @@
           toolCallResponse: null,
           toolRetryCount: 0,
           iterationCount: 0,
+          maxIterationsReached: false,
           selectedPreset: DB.loadFromStorage().agentSystemPromptPreset || 'agent',
           customSystemPrompt: DB.loadFromStorage().agentCustomSystemPrompt || '',
         };
@@ -42,6 +44,7 @@
         this.handleInputChange = this.handleInputChange.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleCancel = this.handleCancel.bind(this);
+        this.handleContinue = this.handleContinue.bind(this);
         this.clearHistory = this.clearHistory.bind(this);
         this.handleBubbleClick = this.handleBubbleClick.bind(this);
         this.renderTypingIndicator = this.renderTypingIndicator.bind(this);
@@ -52,6 +55,7 @@
         this.renderToolCallPanel = this.renderToolCallPanel.bind(this);
         this.toggleMode = this.toggleMode.bind(this);
         this._copyTimeoutId = null;
+        this._executedToolCallMsg = null;
         this._debouncedSaveAgentHistory = DB.debounce(function(history) {
           DB.saveAgentHistory(history);
         }, 500);
@@ -120,6 +124,24 @@
         }
       }
 
+      handleContinue() {
+        var self = this;
+        if (self.state.isTyping) return;
+        var continueMsg = {
+          role: 'user',
+          content: 'Please continue the task from where you left off.',
+          messageId: DB.generateMessageId(),
+          _isContinue: true
+        };
+        var streamMsgId = DB.generateMessageId();
+        self.setState({ maxIterationsReached: false, iterationCount: 0 }, function() {
+          var currentHistory = self.state.agentHistory || [];
+          var apiMessages = DB.buildApiMessages(currentHistory.concat([continueMsg]));
+          self.addMessage(continueMsg);
+          self._streamLLMResponse(apiMessages, streamMsgId, DB._cachedOpenapiSchema);
+        });
+      }
+
       handleExecuteToolCall() {
         var self = this;
         var s = this.state;
@@ -149,6 +171,7 @@
             });
           }
           self.addMessage(toolMsg);
+          self._executedToolCallMsg = toolMsg;
           self._pendingToolCallMsg = null;
         }
 
@@ -220,6 +243,7 @@
         }
 
         self.setState({ toolCallResponse: { status: 'loading', body: '' } });
+        window.dispatchEvent(new CustomEvent('docbuddy-agent-streaming', { detail: { streaming: true } }));
 
         fetch(url, fetchOpts)
           .then(function(res) {
@@ -241,6 +265,18 @@
         var self = this;
         var s = this.state;
 
+        // Enforce the iteration ceiling before processing another tool result
+        if (s.iterationCount >= MAX_AGENT_ITERATIONS) {
+          self.addMessage({
+            role: 'assistant',
+            content: 'Maximum iterations (' + MAX_AGENT_ITERATIONS + ') reached. Review the progress above and use **Continue** to keep going, or send a new message.',
+            messageId: DB.generateMessageId()
+          });
+          self.setState({ pendingToolCall: null, pendingToolCallQueue: [], isTyping: false, maxIterationsReached: true });
+          window.dispatchEvent(new CustomEvent('docbuddy-agent-streaming', { detail: { streaming: false } }));
+          return;
+        }
+
         if (s.toolRetryCount >= MAX_TOOL_CALL_RETRIES) {
           var lastError = 'Status ' + responseObj.status + ' ' + (responseObj.statusText || '');
           var lastBody = (responseObj.body || '').substring(0, 500);
@@ -251,11 +287,13 @@
             content: 'Max tool call retries (' + MAX_TOOL_CALL_RETRIES + ') reached. Last error: ' + errorDetail + '\n\nPlease try a different approach.',
             messageId: DB.generateMessageId()
           });
-          self.setState({ pendingToolCall: null, isTyping: false });
+          self.setState({ pendingToolCall: null, pendingToolCallQueue: [], isTyping: false });
           return;
         }
 
         var toolCallId = s.pendingToolCall ? s.pendingToolCall.id : 'call_unknown';
+        var isError = responseObj.status < 200 || responseObj.status >= 300;
+        var remainingQueue = (s.pendingToolCallQueue || []).slice();
 
         var truncatedBody = (responseObj.body || '').substring(0, MAX_TOOL_RESPONSE_LENGTH);
         var resultContent = 'Status: ' + responseObj.status + ' ' + (responseObj.statusText || '') + '\n\n' + truncatedBody;
@@ -268,22 +306,62 @@
           _displayContent: 'Tool result: Status ' + responseObj.status
         };
 
+        // Synchronous rejection paths (URL validation, path traversal, JSON parse) call
+        // sendToolResult on the same tick as addMessage(toolMsg), so that setState may not
+        // have flushed yet. Manually ensure the assistant tool_calls message is present in
+        // the snapshot so the OpenAI API tool-calls → tool-result contract is not broken.
         var currentHistory = (self.state.agentHistory || []).slice();
+        if (self._executedToolCallMsg) {
+          var alreadyPresent = currentHistory.some(function(m) {
+            return m.messageId === self._executedToolCallMsg.messageId;
+          });
+          if (!alreadyPresent) currentHistory.push(self._executedToolCallMsg);
+          self._executedToolCallMsg = null;
+        }
         currentHistory.push(toolResultMsg);
-
-        var apiMessages = DB.buildApiMessages(currentHistory);
 
         self.addMessage(toolResultMsg);
 
+        if (remainingQueue.length > 0) {
+          // More tool calls from the same LLM response — advance the queue and execute
+          // the next one. Do NOT re-stream until all tool results have been collected.
+          var nextTc = remainingQueue[0];
+          var nextArgs = {};
+          try { nextArgs = JSON.parse(nextTc.function.arguments || '{}'); } catch (e) {}
+          self.setState({
+            pendingToolCall: nextTc,
+            pendingToolCallQueue: remainingQueue.slice(1),
+            toolRetryCount: isError ? s.toolRetryCount + 1 : 0,
+            iterationCount: s.iterationCount + 1,
+            editMethod: nextArgs.method || 'GET',
+            editPath: nextArgs.path || '',
+            editQueryParams: JSON.stringify(nextArgs.query_params || {}, null, 2),
+            editPathParams: JSON.stringify(nextArgs.path_params || {}, null, 2),
+            editBody: JSON.stringify(nextArgs.body || {}, null, 2),
+            toolCallResponse: null,
+          }, function() {
+            var toolSettings = DB.loadToolSettings();
+            if (toolSettings.autoExecute || self.state.mode === 'act') {
+              self.handleExecuteToolCall();
+            }
+          });
+          return;
+        }
+
+        // All tool calls from this response are done — re-stream.
+        // Rebuild apiMessages in the setState callback so all preceding addMessage
+        // setState calls have been applied and the full tool-result chain is in history.
         var streamMsgId = DB.generateMessageId();
-        var isError = responseObj.status < 200 || responseObj.status >= 300;
         self.setState({
           pendingToolCall: null,
+          pendingToolCallQueue: [],
           toolRetryCount: isError ? s.toolRetryCount + 1 : 0,
           iterationCount: s.iterationCount + 1,
+        }, function() {
+          var fullHistory = (self.state.agentHistory || []).slice();
+          var freshApiMessages = DB.buildApiMessages(fullHistory);
+          self._streamLLMResponse(freshApiMessages, streamMsgId, DB._cachedOpenapiSchema);
         });
-
-        self._streamLLMResponse(apiMessages, streamMsgId, DB._cachedOpenapiSchema);
       }
 
       _getErrorMessage(err, responseText) {
@@ -538,7 +616,8 @@
 
                         self.setState({
                           isTyping: false,
-                          pendingToolCall: tc,
+                          pendingToolCall: toolCallsList[0],
+                          pendingToolCallQueue: toolCallsList.slice(1),
                           editMethod: args.method || 'GET',
                           editPath: args.path || '',
                           editQueryParams: JSON.stringify(args.query_params || {}, null, 2),
@@ -547,7 +626,7 @@
                           toolCallResponse: null,
                         }, function() {
                           var toolSettings = DB.loadToolSettings();
-                          if (toolSettings.autoExecute) {
+                          if (toolSettings.autoExecute || self.state.mode === 'act') {
                             self.handleExecuteToolCall();
                           }
                         });
@@ -590,7 +669,7 @@
         var streamMsgId = DB.generateMessageId();
 
         self._pendingToolCallMsg = null;
-        self.setState({ input: "", pendingToolCall: null, toolCallResponse: null, toolRetryCount: 0, iterationCount: 0 });
+        self.setState({ input: "", pendingToolCall: null, toolCallResponse: null, toolRetryCount: 0, iterationCount: 0, maxIterationsReached: false });
 
         var userMsg = { role: 'user', content: userInput, messageId: msgId };
         var currentHistory = self.state.agentHistory || [];
@@ -639,6 +718,14 @@
         var isUser = msg.role === 'user';
         var isTool = msg.role === 'tool';
         var isToolCallMsg = msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0;
+
+        if (msg._isContinue) {
+          return React.createElement(
+            "div",
+            { key: msg.messageId, style: { textAlign: "center", color: "var(--theme-text-secondary)", fontSize: "11px", padding: "4px 0", fontStyle: "italic" } },
+            "↩ Continued"
+          );
+        }
 
         var agentHistory = self.state.agentHistory || [];
         var isStreamingThisMessage = self.state.isTyping &&
@@ -819,6 +906,27 @@
 
         if (!s.pendingToolCall) return null;
 
+        // In Act mode the agent runs autonomously — show a compact progress line instead of the edit panel
+        if (s.mode === 'act') {
+          return React.createElement(
+            "div",
+            {
+              style: {
+                padding: "8px 12px",
+                borderTop: "1px solid var(--theme-border-color)",
+                background: "var(--theme-panel-bg)",
+                fontSize: "12px",
+                color: "var(--theme-text-secondary)",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }
+            },
+            React.createElement("span", { style: { animation: "docbuddy-pulse 1.4s infinite ease-in-out", display: "inline-block" } }, "⚡"),
+            React.createElement("span", null, "Executing: " + s.editMethod + " " + s.editPath)
+          );
+        }
+
         var panelStyle = {
           padding: "10px 12px",
           borderTop: "1px solid var(--theme-border-color)",
@@ -922,6 +1030,29 @@
                 this.renderTypingIndicator()
               )
             : null,
+          this.state.maxIterationsReached && !this.state.isTyping
+            ? React.createElement(
+                "div",
+                { style: { padding: "8px 12px", textAlign: "center", borderTop: "1px solid var(--theme-border-color)" } },
+                React.createElement(
+                  "button",
+                  {
+                    onClick: this.handleContinue,
+                    style: {
+                      background: "var(--theme-primary)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "8px 20px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      fontWeight: "500"
+                    }
+                  },
+                  "↩ Continue Agent"
+                )
+              )
+            : null,
           this.state.pendingToolCall && !this.state.isTyping ? this.renderToolCallPanel() : null,
           React.createElement(
             "div",
@@ -971,7 +1102,7 @@
                     fontSize: '10px', color: 'var(--theme-text-secondary)',
                     background: 'var(--theme-secondary)', padding: '2px 8px', borderRadius: '8px',
                   }
-                }, "Iter: " + this.state.iterationCount + "/" + MAX_AGENT_ITERATIONS) : null,
+                }, "Iterations: " + this.state.iterationCount + "/" + MAX_AGENT_ITERATIONS) : null,
                 React.createElement("button", {
                   onClick: this.toggleMode,
                   disabled: this.state.isTyping,

@@ -77,14 +77,17 @@
         localStorage.setItem(TAB_STORAGE_KEY, activeTab);
       }, [activeTab]);
 
-      // When switching back to chat, scroll to bottom to show any messages streamed in background
+      // When switching back to chat or agent, scroll to bottom to show any messages streamed in background
       React.useEffect(function () {
-        if (activeTab === "chat") {
-          requestAnimationFrame(function () {
-            var el = document.getElementById('llm-chat-messages');
-            if (el) el.scrollTop = el.scrollHeight;
-          });
-        }
+        requestAnimationFrame(function () {
+          if (activeTab === "chat") {
+            var chatEl = document.getElementById('llm-chat-messages');
+            if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+          } else if (activeTab === "agent") {
+            var agentEl = document.getElementById('llm-agent-messages');
+            if (agentEl) agentEl.scrollTop = agentEl.scrollHeight;
+          }
+        });
       }, [activeTab]);
 
       // Track whether chat is actively streaming (for tab indicator)

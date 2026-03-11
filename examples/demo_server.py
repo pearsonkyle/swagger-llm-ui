@@ -96,6 +96,14 @@ class InvoiceFilter(BaseModel):
     )
 
 
+class EmailReminder(BaseModel):
+    """Request model for sending email reminder."""
+
+    message: Optional[str] = Field(
+        None, description="Custom message to include in the reminder email"
+    )
+
+
 # ── In-Memory Storage ───────────────────────────────────────────────────────
 invoices: List[Invoice] = []
 invoice_counter = 0
@@ -211,6 +219,43 @@ async def get_invoice(invoice_id: int):
             return invoice
 
     raise HTTPException(status_code=404, detail="Invoice not found")
+
+
+@app.post("/invoices/{invoice_id}/remind", tags=["invoices"])
+async def remind_overdue_invoice(invoice_id: int, reminder: EmailReminder):
+    """Send an email reminder for an overdue invoice.
+
+    Mock endpoint that simulates sending a reminder email for an overdue invoice.
+    Returns success status without actually sending emails.
+    """
+    # Find the invoice
+    invoice = None
+    for inv in invoices:
+        if inv.id == invoice_id:
+            invoice = inv
+            break
+
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    # Check if invoice is overdue (due_date is before today)
+    if invoice.due_date >= date.today():
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invoice {invoice_id} is not yet overdue. Due date: {invoice.due_date}",
+        )
+
+    # Simulate sending email (in a real implementation, this would use an email service)
+    return {
+        "status": "success",
+        "message": f"Reminder sent for invoice #{invoice_id} to {invoice.customer_email}",
+        "invoice_id": invoice_id,
+        "customer_name": invoice.customer_name,
+        "customer_email": invoice.customer_email,
+        "amount": invoice.total_amount,
+        "due_date": invoice.due_date,
+        "custom_message": reminder.message,
+    }
 
 
 # ── Error handlers ───────────────────────────────────────────────────────────
