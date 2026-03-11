@@ -327,7 +327,7 @@
 
     <!-- Embed container for /docs iframe fallback -->
     <div id="docbuddy-embed-container">
-      <iframe id="docs-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      <iframe id="docs-iframe" sandbox="allow-scripts allow-forms allow-popups"></iframe>
     </div>
 
     <!-- CDN Dependencies -->
@@ -567,15 +567,26 @@
         history.replaceState(null, '', window.location.pathname);
       }
 
-      // ── Auto-load from query parameter or localStorage on page load ─────────
+      // ── Auto-load from query parameter on page load ─────────────────────────
       (function() {
         var params = new URLSearchParams(window.location.search);
         var urlParam = params.get('url');
 
         if (urlParam) {
           document.getElementById('url-input').value = urlParam;
-          // Delay slightly to ensure scripts are loaded
-          setTimeout(function() { handleLoad(); }, 100);
+          // Wait for DocBuddyPlugin to be available before loading
+          function tryLoad() {
+            if (typeof DocBuddyPlugin !== 'undefined' && typeof SwaggerUIBundle !== 'undefined') {
+              handleLoad();
+            } else {
+              setTimeout(tryLoad, 50);
+            }
+          }
+          if (document.readyState === 'complete') {
+            tryLoad();
+          } else {
+            window.addEventListener('load', tryLoad);
+          }
         }
       })();
 
