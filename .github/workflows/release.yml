@@ -6,9 +6,17 @@ on:
       - "v*"
   workflow_dispatch:
     inputs:
+      bump-type:
+        description: 'Bump type for version increment (major/minor/patch)'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+        default: patch
       version:
-        description: 'Version to release (e.g., 0.5.0)'
-        required: true
+        description: 'Version to release (e.g., 0.5.0) - leave empty if using bump-type'
+        required: false
       publish-to-testpypi:
         description: 'Publish to TestPyPI first'
         type: boolean
@@ -33,8 +41,27 @@ jobs:
           if [ "${{ github.event_name }}" == "push" ]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-          else
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            # Use explicit version if provided
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # Calculate new version based on bump-type
+            CURRENT_VERSION=$(grep '^version = "' pyproject.toml | cut -d'"' -f2)
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+            case "${{ github.event.inputs.bump-type }}" in
+              major)
+                NEW_MAJOR=$((MAJOR + 1))
+                echo "version=${NEW_MAJOR}.0.0" >> $GITHUB_OUTPUT
+                ;;
+              minor)
+                NEW_MINOR=$((MINOR + 1))
+                echo "version=${MAJOR}.${NEW_MINOR}.0" >> $GITHUB_OUTPUT
+                ;;
+              patch)
+                NEW_PATCH=$((PATCH + 1))
+                echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
+                ;;
+            esac
           fi
 
       - name: Validate version format
@@ -49,10 +76,22 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           PYPROJECT_VERSION=$(grep '^version = "' pyproject.toml | cut -d'"' -f2)
-          if [ "$VERSION" != "$PYPROJECT_VERSION" ]; then
-            echo "Error: Version mismatch between tag ($VERSION) and pyproject.toml ($PYPROJECT_VERSION)"
-            exit 1
+          if [ "${{ github.event_name }}" == "push" ]; then
+            # For tag pushes, version should match the tag (no check needed here)
+            echo "Tag release: v${VERSION}"
+          elif [ "$VERSION" != "$PYPROJECT_VERSION" ]; then
+            echo "Note: Using bump-type to increment version from $PYPROJECT_VERSION to $VERSION"
+          else
+            echo "Version matches pyproject.toml: $VERSION"
           fi
+
+      - name: Update version in pyproject.toml (if using bump-type)
+        if: github.event.inputs.version == '' && github.event_name != 'push'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          echo "Updated pyproject.toml to version $VERSION"
+          cat pyproject.toml | head -5
 
   test-publish:
     runs-on: ubuntu-latest
