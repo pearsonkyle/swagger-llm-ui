@@ -4,11 +4,16 @@
 import argparse
 import functools
 import http.server
+import pathlib
 import sys
 import threading
 import time
 import webbrowser
-from importlib.resources import files
+
+
+def _pkg_dir() -> pathlib.Path:
+    """Return the directory that contains standalone.html and static/."""
+    return pathlib.Path(__file__).parent
 
 
 def main():
@@ -34,21 +39,23 @@ def main():
 
     args = parser.parse_args()
 
-    # Locate packaged assets via importlib.resources (works for both editable
-    # and normal pip installs; no os.chdir() needed).
-    pkg_ref = files("docbuddy")
-    standalone_ref = pkg_ref.joinpath("standalone.html")
+    # Locate the package directory using __file__ – this is the most reliable
+    # way to find the installed package assets regardless of Python version,
+    # install method (editable, wheel, sdist), or platform.
+    pkg_dir = _pkg_dir()
+    standalone_path = pkg_dir / "standalone.html"
 
-    if not standalone_ref.is_file():
+    if not standalone_path.is_file():
         print(
-            f"Error: Could not find 'standalone.html' in the docbuddy package ({pkg_ref})",
+            f"Error: Could not find 'standalone.html' in the docbuddy package ({pkg_dir})",
             file=sys.stderr,
         )
         sys.exit(1)
 
     # Serve only the package directory – not the whole repo/site-packages root.
-    pkg_dir = str(pkg_ref)
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=pkg_dir)
+    handler = functools.partial(
+        http.server.SimpleHTTPRequestHandler, directory=str(pkg_dir)
+    )
 
     url = f"http://{args.host}:{args.port}/standalone.html"
 
