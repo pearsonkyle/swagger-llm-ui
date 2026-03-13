@@ -448,7 +448,8 @@
             <span class="copy-hint">Click to copy</span>
           </div>
           <p style="font-size: 12px; color: var(--theme-text-secondary); margin-top: 8px;">
-            Opens at the address shown in the terminal (default port <code>8008</code>)
+            Opens at <code id="local-url"></code>
+            <script>document.getElementById('local-url').textContent = window.location.href;</script>
           </p>
 
           <h3>Python Plugin</h3>
@@ -494,11 +495,12 @@ app = <span class="fn">FastAPI</span>()
 
     <script>
       // Resolve base URL for DocBuddy static assets.
-      // When served locally (e.g. python -m http.server from repo root), use local files.
+      // When served locally (e.g. via `docbuddy` CLI), use local files from the
+      // package directory where static/ is a sibling of standalone.html.
       // Otherwise fall back to jsDelivr CDN for the published GitHub Pages site.
       var IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
       var DOCBUDDY_CDN_BASE = 'https://cdn.jsdelivr.net/gh/pearsonkyle/DocBuddy@main/src/docbuddy/static';
-      var DOCBUDDY_LOCAL_BASE = '../src/docbuddy/static';
+      var DOCBUDDY_LOCAL_BASE = './static'; // sibling of standalone.html in the installed package
       var DOCBUDDY_BASE = IS_LOCAL ? DOCBUDDY_LOCAL_BASE : DOCBUDDY_CDN_BASE;
 
       window.DOCBUDDY_STATIC_BASE = DOCBUDDY_BASE;

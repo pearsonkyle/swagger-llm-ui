@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "docbuddy"
-version = "0.5.0"
+version = "0.6.0"
 description = "Add an AI Assistant to your `/docs` page."
 description-content-type = "text/markdown"
 readme = "README.md"
@@ -48,6 +48,9 @@ Repository = "https://github.com/pearsonkyle/docbuddy"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docbuddy"]
+
+[project.scripts]
+docbuddy = "docbuddy.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

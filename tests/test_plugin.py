@@ -1796,3 +1796,98 @@ def test_standalone_page_has_docbuddy_plugin():
     html = (Path(__file__).parent.parent / "docs" / "index.html").read_text()
     assert "DocBuddyPlugin" in html
     assert "LLMDocsLayout" in html
+
+
+# ── CLI tests ──────────────────────────────────────────────────────────────────
+
+
+def test_cli_standalone_html_is_packaged():
+    """Verify standalone.html is shipped inside the docbuddy package."""
+    import pathlib
+
+    import docbuddy
+
+    pkg_dir = pathlib.Path(docbuddy.__file__).parent
+    standalone_path = pkg_dir / "standalone.html"
+    assert (
+        standalone_path.is_file()
+    ), "standalone.html must be present in the installed package"
+
+
+def test_cli_standalone_html_uses_local_static_path():
+    """standalone.html must load JS from ./static (not from the repo root path)."""
+    import pathlib
+
+    import docbuddy
+
+    pkg_dir = pathlib.Path(docbuddy.__file__).parent
+    html = (pkg_dir / "standalone.html").read_text(encoding="utf-8")
+    assert (
+        "./static" in html
+    ), "standalone.html should reference './static' for local assets"
+    assert (
+        "../src/docbuddy/static" not in html
+    ), "standalone.html must not reference the repo-layout path ../src/docbuddy/static"
+
+
+def test_cli_main_exits_on_missing_standalone(monkeypatch, tmp_path):
+    """main() must exit with a clear message when standalone.html is missing."""
+    import sys
+
+    import pytest
+
+    import docbuddy.cli as cli_module
+
+    # Point _pkg_dir() at a temporary directory with no standalone.html
+    monkeypatch.setattr(cli_module, "_pkg_dir", lambda: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["docbuddy"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli_module.main()
+    assert exc_info.value.code == 1
+
+
+def test_cli_uses_directory_not_chdir(monkeypatch, tmp_path):
+    """main() must not call os.chdir; it must pass directory= to the HTTP handler."""
+    import functools
+    import sys
+    from unittest.mock import MagicMock, patch
+
+    import docbuddy.cli as cli_module
+
+    # Create a fake standalone.html so the existence check passes
+    (tmp_path / "standalone.html").write_text("<html></html>")
+    monkeypatch.setattr(cli_module, "_pkg_dir", lambda: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["docbuddy"])
+
+    # Capture the handler passed to HTTPServer to verify directory= is set
+    captured_handler = {}
+
+    def fake_http_server(addr, handler):
+        captured_handler["handler"] = handler
+        mock_httpd = MagicMock()
+        mock_httpd.__enter__ = lambda s: s
+        mock_httpd.__exit__ = MagicMock(return_value=False)
+        mock_httpd.serve_forever.side_effect = KeyboardInterrupt
+        return mock_httpd
+
+    with (
+        patch("http.server.HTTPServer", side_effect=fake_http_server),
+        patch("webbrowser.open"),
+    ):
+        try:
+            cli_module.main()
+        except SystemExit:
+            pass
+
+    handler = captured_handler.get("handler")
+    assert handler is not None, "HTTPServer must be called with a handler"
+    # The handler must be a functools.partial with directory= keyword set
+    assert isinstance(handler, functools.partial), "handler must be a functools.partial"
+    assert (
+        "directory" in handler.keywords
+    ), "handler must have directory= keyword argument"
+    # directory must point to the package dir (tmp_path in this test)
+    assert handler.keywords["directory"] == str(
+        tmp_path
+    ), "directory= must be the package directory"
