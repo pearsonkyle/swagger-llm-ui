@@ -135,18 +135,30 @@
 
     // Step 2a: Swagger 2.0 — host + basePath + schemes (checked first for Swagger 2.0 schemas
     // because basePath is authoritative; a servers[] entry may omit the base path prefix)
-    if (schema && schema.swagger && schema.host) {
-      var swaggerScheme = 'https';
-      if (schema.schemes && schema.schemes.length > 0) {
-        // Prefer https over http when both are listed
-        swaggerScheme = schema.schemes.indexOf('https') >= 0 ? 'https' : schema.schemes[0];
+    // Note: per the Swagger 2.0 spec, "host" is OPTIONAL — when absent, the host serving
+    // the documentation is assumed. We infer it from the schema file URL in that case.
+    if (schema && schema.swagger) {
+      var swaggerHost = schema.host;
+      // If host is omitted, infer from the schema file URL's host
+      if (!swaggerHost) {
+        var inferredOrigin = resolveSchemaOrigin();
+        if (inferredOrigin) {
+          try { swaggerHost = new URL(inferredOrigin).host; } catch (e) {}
+        }
       }
-      var swaggerBase = swaggerScheme + '://' + schema.host;
-      if (schema.basePath && schema.basePath !== '/') {
-        swaggerBase += schema.basePath.replace(/\/+$/, '');
+      if (swaggerHost) {
+        var swaggerScheme = 'https';
+        if (schema.schemes && schema.schemes.length > 0) {
+          // Prefer https over http when both are listed
+          swaggerScheme = schema.schemes.indexOf('https') >= 0 ? 'https' : schema.schemes[0];
+        }
+        var swaggerBase = swaggerScheme + '://' + swaggerHost;
+        if (schema.basePath && schema.basePath !== '/') {
+          swaggerBase += schema.basePath.replace(/\/+$/, '');
+        }
+        console.debug('[API Base URL] Step 2a - Using Swagger 2.0 host+basePath:', swaggerBase);
+        return swaggerBase;
       }
-      console.debug('[API Base URL] Step 2a - Using Swagger 2.0 host+basePath:', swaggerBase);
-      return swaggerBase;
     }
 
     // Step 2b: Check OpenAPI 3.0+ schema servers array

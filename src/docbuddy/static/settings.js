@@ -249,7 +249,7 @@
 
       handleApiBaseUrlChange(e) {
         this.setState({ apiBaseUrl: e.target.value });
-        DB.dispatchAction(system, 'setToolApiKey', e.target.value);
+        DB.saveApiBaseUrl(e.target.value || '');
         this._debouncedSave();
       }
 

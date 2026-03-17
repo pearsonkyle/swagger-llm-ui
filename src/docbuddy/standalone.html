@@ -609,14 +609,23 @@ app = <span class="fn">FastAPI</span>()
           if (prefetchedSchema) {
             // Swagger 2.0: build from host + basePath + schemes (checked FIRST — basePath
             // is authoritative; some Swagger 2.0 schemas also carry a servers[] without /api)
-            if (prefetchedSchema.swagger && prefetchedSchema.host) {
-              var sw2Scheme = 'https';
-              if (prefetchedSchema.schemes && prefetchedSchema.schemes.length > 0) {
-                sw2Scheme = prefetchedSchema.schemes.indexOf('https') >= 0 ? 'https' : prefetchedSchema.schemes[0];
+            // Note: per the Swagger 2.0 spec, "host" is OPTIONAL — when absent, the host
+            // serving the documentation is assumed. We infer it from schemaUrl in that case.
+            if (prefetchedSchema.swagger) {
+              var sw2Host = prefetchedSchema.host;
+              // If host is omitted, infer from the schema file URL
+              if (!sw2Host) {
+                try { sw2Host = new URL(schemaUrl).host; } catch(e) {}
               }
-              detectedApiBase = sw2Scheme + '://' + prefetchedSchema.host;
-              if (prefetchedSchema.basePath && prefetchedSchema.basePath !== '/') {
-                detectedApiBase += prefetchedSchema.basePath.replace(/\/+$/, '');
+              if (sw2Host) {
+                var sw2Scheme = 'https';
+                if (prefetchedSchema.schemes && prefetchedSchema.schemes.length > 0) {
+                  sw2Scheme = prefetchedSchema.schemes.indexOf('https') >= 0 ? 'https' : prefetchedSchema.schemes[0];
+                }
+                detectedApiBase = sw2Scheme + '://' + sw2Host;
+                if (prefetchedSchema.basePath && prefetchedSchema.basePath !== '/') {
+                  detectedApiBase += prefetchedSchema.basePath.replace(/\/+$/, '');
+                }
               }
             }
 
