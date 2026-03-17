@@ -656,8 +656,27 @@ app = <span class="fn">FastAPI</span>()
             try { detectedApiBase = new URL(schemaUrl).origin; } catch(e) {}
           }
 
-          if (detectedApiBase && window.DocBuddy && typeof window.DocBuddy.saveApiBaseUrl === 'function') {
-            window.DocBuddy.saveApiBaseUrl(detectedApiBase);
+          if (detectedApiBase) {
+            // Set the global variable that resolveApiBaseUrl Step 0 checks.
+            // This works immediately even if core.js is CDN-cached (old version),
+            // because docs/index.html is served directly by GitHub Pages.
+            window.DOCBUDDY_API_BASE_URL = detectedApiBase;
+
+            if (window.DocBuddy && typeof window.DocBuddy.saveApiBaseUrl === 'function') {
+              window.DocBuddy.saveApiBaseUrl(detectedApiBase);
+            }
+
+            // Safety net: monkey-patch resolveApiBaseUrl in case the CDN-cached
+            // core.js doesn't have the Step 0 global check yet.
+            if (window.DocBuddy && typeof window.DocBuddy.resolveApiBaseUrl === 'function') {
+              var _origResolve = window.DocBuddy.resolveApiBaseUrl;
+              window.DocBuddy.resolveApiBaseUrl = function(schema) {
+                if (window.DOCBUDDY_API_BASE_URL) {
+                  return window.DOCBUDDY_API_BASE_URL.replace(/\/+$/, '');
+                }
+                return _origResolve(schema);
+              };
+            }
           }
         } catch(e) {
           console.warn('[DocBuddy] Failed to auto-detect API base URL:', e);
@@ -830,6 +849,7 @@ app = <span class="fn">FastAPI</span>()
           window.DocBuddy._schemaFetchFailed = false;
         }
         window.DOCBUDDY_OPENAPI_URL = null;
+        window.DOCBUDDY_API_BASE_URL = null;
       }
 
       // ── Auto-load from query parameter on page load ─────────────────────────

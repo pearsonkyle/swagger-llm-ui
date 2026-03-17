@@ -110,6 +110,18 @@
    * @returns {string} The resolved base URL with trailing slash removed
    */
   function resolveApiBaseUrl(schema) {
+    // Step 0: Check global DOCBUDDY_API_BASE_URL (set by standalone pages at schema-load time).
+    // This takes top priority in standalone mode because it's set once with the correct
+    // detected value and doesn't depend on localStorage or schema parsing.
+    var globalApiBase = window.DOCBUDDY_API_BASE_URL;
+    if (globalApiBase && typeof globalApiBase === 'string' && globalApiBase.trim()) {
+      var globalTrimmed = globalApiBase.trim().replace(/\/+$/, '');
+      if (globalTrimmed.startsWith('http://') || globalTrimmed.startsWith('https://')) {
+        console.debug('[API Base URL] Step 0 - Using global DOCBUDDY_API_BASE_URL:', globalTrimmed);
+        return globalTrimmed;
+      }
+    }
+
     // Step 1: Check user-configured API Base URL (highest priority, applies in all modes)
     var userConfiguredUrl = loadApiBaseUrl();
     if (userConfiguredUrl && typeof userConfiguredUrl === 'string' && userConfiguredUrl.trim()) {

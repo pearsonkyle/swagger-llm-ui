@@ -657,8 +657,13 @@ app = <span class="fn">FastAPI</span>()
             try { detectedApiBase = new URL(schemaUrl).origin; } catch(e) {}
           }
 
-          if (detectedApiBase && window.DocBuddy && typeof window.DocBuddy.saveApiBaseUrl === 'function') {
-            window.DocBuddy.saveApiBaseUrl(detectedApiBase);
+          if (detectedApiBase) {
+            // Set global variable for resolveApiBaseUrl Step 0
+            window.DOCBUDDY_API_BASE_URL = detectedApiBase;
+
+            if (window.DocBuddy && typeof window.DocBuddy.saveApiBaseUrl === 'function') {
+              window.DocBuddy.saveApiBaseUrl(detectedApiBase);
+            }
           }
         } catch(e) {
           console.warn('[DocBuddy] Failed to auto-detect API base URL:', e);
@@ -801,6 +806,19 @@ app = <span class="fn">FastAPI</span>()
         var btn = document.getElementById('load-btn');
         btn.innerHTML = 'Load';
         btn.disabled = false;
+
+        // Clear schema-specific state so the next loaded schema starts fresh
+        window.DOCBUDDY_API_BASE_URL = null;
+        window.DOCBUDDY_OPENAPI_URL = null;
+        try { localStorage.removeItem('docbuddy-api-base-url'); } catch(e) {}
+        try { localStorage.removeItem('docbuddy-chat-history'); } catch(e) {}
+        try { localStorage.removeItem('docbuddy-agent-history'); } catch(e) {}
+        if (window.DocBuddy) {
+          window.DocBuddy._cachedOpenapiSchema = null;
+          window.DocBuddy._openapiSchemaFetchPromise = null;
+          window.DocBuddy._schemaFetchUrl = null;
+          window.DocBuddy._schemaFetchFailed = false;
+        }
       }
 
       // ── Auto-load from query parameter on page load ─────────────────────────
