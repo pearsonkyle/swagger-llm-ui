@@ -596,12 +596,31 @@ app = <span class="fn">FastAPI</span>()
         // This ensures tool calls in Chat, Agent, and Workflow are routed to
         // the correct API server rather than falling back to window.location.origin
         // (which would be pearsonkyle.github.io on GitHub Pages).
+        //
+        // Clear any stale auto-detected API base URL before saving the new one.
+        // This prevents old wrong values from being returned by resolveApiBaseUrl
+        // Step 1 on the next tool call (e.g. after switching schemas).
+        try { localStorage.removeItem('docbuddy-api-base-url'); } catch(e) {}
+
         try {
           var detectedApiBase = null;
 
           if (prefetchedSchema) {
-            // OpenAPI 3.0+: use first absolute server URL
-            if (prefetchedSchema.servers && prefetchedSchema.servers.length > 0) {
+            // Swagger 2.0: build from host + basePath + schemes (checked FIRST — basePath
+            // is authoritative; some Swagger 2.0 schemas also carry a servers[] without /api)
+            if (prefetchedSchema.swagger && prefetchedSchema.host) {
+              var sw2Scheme = 'https';
+              if (prefetchedSchema.schemes && prefetchedSchema.schemes.length > 0) {
+                sw2Scheme = prefetchedSchema.schemes.indexOf('https') >= 0 ? 'https' : prefetchedSchema.schemes[0];
+              }
+              detectedApiBase = sw2Scheme + '://' + prefetchedSchema.host;
+              if (prefetchedSchema.basePath && prefetchedSchema.basePath !== '/') {
+                detectedApiBase += prefetchedSchema.basePath.replace(/\/+$/, '');
+              }
+            }
+
+            // OpenAPI 3.0+: use first absolute server URL (only if Swagger 2.0 fields absent)
+            if (!detectedApiBase && prefetchedSchema.servers && prefetchedSchema.servers.length > 0) {
               for (var si = 0; si < prefetchedSchema.servers.length; si++) {
                 var sUrl = (prefetchedSchema.servers[si].url || '').trim();
                 if (sUrl.startsWith('http://') || sUrl.startsWith('https://')) {
@@ -619,18 +638,6 @@ app = <span class="fn">FastAPI</span>()
                     detectedApiBase = (schemaOrigin + relPath).replace(/\/+$/, '');
                   } catch(e) {}
                 }
-              }
-            }
-
-            // Swagger 2.0: build from host + basePath + schemes
-            if (!detectedApiBase && prefetchedSchema.swagger && prefetchedSchema.host) {
-              var sw2Scheme = 'https';
-              if (prefetchedSchema.schemes && prefetchedSchema.schemes.length > 0) {
-                sw2Scheme = prefetchedSchema.schemes.indexOf('https') >= 0 ? 'https' : prefetchedSchema.schemes[0];
-              }
-              detectedApiBase = sw2Scheme + '://' + prefetchedSchema.host;
-              if (prefetchedSchema.basePath && prefetchedSchema.basePath !== '/') {
-                detectedApiBase += prefetchedSchema.basePath.replace(/\/+$/, '');
               }
             }
           }

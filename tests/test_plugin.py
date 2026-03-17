@@ -1869,7 +1869,7 @@ def test_resolve_api_base_url_step1_user_configured():
 
 
 def test_resolve_api_base_url_step2a_openapi3_servers():
-    """Verify resolveApiBaseUrl reads OpenAPI 3.0+ servers array."""
+    """Verify resolveApiBaseUrl handles Swagger 2.0 host/basePath (Step 2a, checked first)."""
     client = TestClient(make_app())
     js_content = client.get("/docbuddy-static/core.js").text
 

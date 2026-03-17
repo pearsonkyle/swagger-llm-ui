@@ -594,6 +594,67 @@ app = <span class="fn">FastAPI</span>()
           }
         }
 
+        // Auto-detect and persist the API base URL from the loaded schema.
+        // This ensures tool calls in Chat, Agent, and Workflow are routed to
+        // the correct API server rather than falling back to window.location.origin
+        // (which would be the local CLI server, not the target API).
+        // Clear any stale auto-detected API base URL before saving the new one.
+        // This prevents old wrong values (e.g. just the origin without basePath)
+        // from being returned by resolveApiBaseUrl Step 1 on the next tool call.
+        try { localStorage.removeItem('docbuddy-api-base-url'); } catch(e) {}
+
+        try {
+          var detectedApiBase = null;
+
+          if (prefetchedSchema) {
+            // Swagger 2.0: build from host + basePath + schemes (checked FIRST — basePath
+            // is authoritative; some Swagger 2.0 schemas also carry a servers[] without /api)
+            if (prefetchedSchema.swagger && prefetchedSchema.host) {
+              var sw2Scheme = 'https';
+              if (prefetchedSchema.schemes && prefetchedSchema.schemes.length > 0) {
+                sw2Scheme = prefetchedSchema.schemes.indexOf('https') >= 0 ? 'https' : prefetchedSchema.schemes[0];
+              }
+              detectedApiBase = sw2Scheme + '://' + prefetchedSchema.host;
+              if (prefetchedSchema.basePath && prefetchedSchema.basePath !== '/') {
+                detectedApiBase += prefetchedSchema.basePath.replace(/\/+$/, '');
+              }
+            }
+
+            // OpenAPI 3.0+: use first absolute server URL (only if Swagger 2.0 fields absent)
+            if (!detectedApiBase && prefetchedSchema.servers && prefetchedSchema.servers.length > 0) {
+              for (var si = 0; si < prefetchedSchema.servers.length; si++) {
+                var sUrl = (prefetchedSchema.servers[si].url || '').trim();
+                if (sUrl.startsWith('http://') || sUrl.startsWith('https://')) {
+                  detectedApiBase = sUrl.replace(/\/+$/, '');
+                  break;
+                }
+              }
+              // Relative server URL — resolve against schema file's origin
+              if (!detectedApiBase) {
+                var relServerUrl = (prefetchedSchema.servers[0].url || '').trim();
+                if (relServerUrl) {
+                  try {
+                    var schOrigin = new URL(schemaUrl).origin;
+                    var relPath = relServerUrl.startsWith('/') ? relServerUrl : '/' + relServerUrl;
+                    detectedApiBase = (schOrigin + relPath).replace(/\/+$/, '');
+                  } catch(e) {}
+                }
+              }
+            }
+          }
+
+          // Fallback: use the schema URL's origin (e.g. https://stablehorde.net)
+          if (!detectedApiBase) {
+            try { detectedApiBase = new URL(schemaUrl).origin; } catch(e) {}
+          }
+
+          if (detectedApiBase && window.DocBuddy && typeof window.DocBuddy.saveApiBaseUrl === 'function') {
+            window.DocBuddy.saveApiBaseUrl(detectedApiBase);
+          }
+        } catch(e) {
+          console.warn('[DocBuddy] Failed to auto-detect API base URL:', e);
+        }
+
         // Clear stale chat/agent history from previous schema sessions
         // so the Chat and Agent panels start fresh with the new API context
         try {

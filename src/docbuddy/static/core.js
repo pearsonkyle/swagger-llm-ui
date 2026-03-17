@@ -110,7 +110,7 @@
    * @returns {string} The resolved base URL with trailing slash removed
    */
   function resolveApiBaseUrl(schema) {
-    // Step 1: Check user-configured API Base URL (highest priority)
+    // Step 1: Check user-configured API Base URL (highest priority, applies in all modes)
     var userConfiguredUrl = loadApiBaseUrl();
     if (userConfiguredUrl && typeof userConfiguredUrl === 'string' && userConfiguredUrl.trim()) {
       var trimmed = userConfiguredUrl.trim().replace(/\/+$/, '');
@@ -120,31 +120,21 @@
       }
     }
 
-    // Step 2a: Check OpenAPI 3.0+ schema servers array
-    if (schema && schema.servers && schema.servers.length > 0) {
-      for (var i = 0; i < schema.servers.length; i++) {
-        var serverUrl = (schema.servers[i].url || '').trim();
-        // Only use absolute URLs with protocol
-        if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
-          console.debug('[API Base URL] Step 2a - Using schema servers[' + i + ']:', serverUrl.replace(/\/+$/, ''));
-          return serverUrl.replace(/\/+$/, '');
-        }
-      }
-
-      // Handle relative server URLs: resolve against the schema file's origin
-      var firstServerUrl = (schema.servers[0].url || '').trim();
-      if (firstServerUrl) {
-        var schemaOrigin = resolveSchemaOrigin();
-        if (schemaOrigin) {
-          var relPath = firstServerUrl.startsWith('/') ? firstServerUrl : '/' + firstServerUrl;
-          var resolved2a = (schemaOrigin + relPath).replace(/\/+$/, '');
-          console.debug('[API Base URL] Step 2a - Resolved relative server URL:', resolved2a);
-          return resolved2a;
-        }
-      }
+    // For pip-installed / same-origin deployments (DOCBUDDY_VERSION !== 'standalone'),
+    // ALWAYS use window.location.origin — the docbuddy server IS the API server.
+    // Schema-based URL detection only makes sense for standalone/GitHub Pages mode
+    // where the page is served from a different host than the target API.
+    // Step 4: Same-origin deployment fallback (checked early to preserve original behavior)
+    if (window.DOCBUDDY_VERSION !== 'standalone') {
+      var sameOriginBase = window.location.origin.replace(/\/+$/, '');
+      console.debug('[API Base URL] Step 4 - Same-origin deployment, using page origin:', sameOriginBase);
+      return sameOriginBase;
     }
 
-    // Step 2b: Swagger 2.0 — host + basePath + schemes
+    // Steps 2a, 2b, 3 only apply in standalone mode (GitHub Pages / CLI standalone page).
+
+    // Step 2a: Swagger 2.0 — host + basePath + schemes (checked first for Swagger 2.0 schemas
+    // because basePath is authoritative; a servers[] entry may omit the base path prefix)
     if (schema && schema.swagger && schema.host) {
       var swaggerScheme = 'https';
       if (schema.schemes && schema.schemes.length > 0) {
@@ -155,8 +145,32 @@
       if (schema.basePath && schema.basePath !== '/') {
         swaggerBase += schema.basePath.replace(/\/+$/, '');
       }
-      console.debug('[API Base URL] Step 2b - Using Swagger 2.0 host+basePath:', swaggerBase);
+      console.debug('[API Base URL] Step 2a - Using Swagger 2.0 host+basePath:', swaggerBase);
       return swaggerBase;
+    }
+
+    // Step 2b: Check OpenAPI 3.0+ schema servers array
+    if (schema && schema.servers && schema.servers.length > 0) {
+      for (var i = 0; i < schema.servers.length; i++) {
+        var serverUrl = (schema.servers[i].url || '').trim();
+        // Only use absolute URLs with protocol
+        if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
+          console.debug('[API Base URL] Step 2b - Using schema servers[' + i + ']:', serverUrl.replace(/\/+$/, ''));
+          return serverUrl.replace(/\/+$/, '');
+        }
+      }
+
+      // Handle relative server URLs: resolve against the schema file's origin
+      var firstServerUrl = (schema.servers[0].url || '').trim();
+      if (firstServerUrl) {
+        var schemaOrigin = resolveSchemaOrigin();
+        if (schemaOrigin) {
+          var relPath = firstServerUrl.startsWith('/') ? firstServerUrl : '/' + firstServerUrl;
+          var resolved2b = (schemaOrigin + relPath).replace(/\/+$/, '');
+          console.debug('[API Base URL] Step 2b - Resolved relative server URL:', resolved2b);
+          return resolved2b;
+        }
+      }
     }
 
     // Step 3: Auto-detect from the schema file URL (use its origin as the API origin)
