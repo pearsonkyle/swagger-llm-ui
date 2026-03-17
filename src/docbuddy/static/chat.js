@@ -935,6 +935,23 @@
               s.editMethod + " " + s.editPath
             )
           ),
+          (function() {
+            var resolvedBase = DB.resolveApiBaseUrl(DB._cachedOpenapiSchema);
+            var fullUrl = resolvedBase + (s.editPath || '');
+            var isWarning = !resolvedBase || resolvedBase === window.location.origin;
+            return React.createElement("div", {
+              style: {
+                fontSize: "11px",
+                color: isWarning ? "#f59e0b" : "var(--theme-text-secondary)",
+                marginBottom: "8px",
+                fontFamily: "'Consolas', 'Monaco', monospace",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              },
+              title: fullUrl
+            }, "→ " + fullUrl + (isWarning ? " ⚠ Check API Base URL in Settings" : ""));
+          })(),
           React.createElement("div", { style: { display: "flex", gap: "6px", marginBottom: "8px", alignItems: "flex-end" } },
             React.createElement(
               "div",

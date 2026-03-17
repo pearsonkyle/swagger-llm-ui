@@ -100,103 +100,115 @@
   /**
    * Resolve the API base URL for tool calls.
    * Priority order:
-   * 1. User-configured API Base URL (from Settings)
-   * 2. OpenAPI schema servers array (first valid absolute URL)
-   * 3. Auto-detect from loaded schema URL
-   * 4. Fallback: window.location.origin (for local development only)
+   * 1. User-configured API Base URL (from Settings, highest priority)
+   * 2a. OpenAPI 3.0+ schema servers array (first valid absolute URL)
+   * 2b. Swagger 2.0 host / basePath / schemes fields
+   * 3. Auto-detect from loaded schema URL (origin of schema file)
+   * 4. Fallback: window.location.origin (only for same-origin deployments like pip/CLI)
    *
-   * @param {Object} schema - The OpenAPI schema object
+   * @param {Object} schema - The OpenAPI schema object (may be OpenAPI 3.0+ or Swagger 2.0)
    * @returns {string} The resolved base URL with trailing slash removed
    */
   function resolveApiBaseUrl(schema) {
-    console.group('[API Base URL] Resolution');
-
     // Step 1: Check user-configured API Base URL (highest priority)
     var userConfiguredUrl = loadApiBaseUrl();
     if (userConfiguredUrl && typeof userConfiguredUrl === 'string' && userConfiguredUrl.trim()) {
       var trimmed = userConfiguredUrl.trim().replace(/\/+$/, '');
       if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         console.debug('[API Base URL] Step 1 - Using user-configured:', trimmed);
-        console.groupEnd();
         return trimmed;
       }
     }
 
-    // Step 2: Check OpenAPI schema servers array
+    // Step 2a: Check OpenAPI 3.0+ schema servers array
     if (schema && schema.servers && schema.servers.length > 0) {
       for (var i = 0; i < schema.servers.length; i++) {
-        var serverUrl = schema.servers[i].url || '';
+        var serverUrl = (schema.servers[i].url || '').trim();
         // Only use absolute URLs with protocol
-        if (serverUrl && (serverUrl.startsWith('http://') || serverUrl.startsWith('https://'))) {
-          console.debug('[API Base URL] Step 2 - Using schema servers[0]:', serverUrl.replace(/\/+$/, ''));
-          console.groupEnd();
+        if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
+          console.debug('[API Base URL] Step 2a - Using schema servers[' + i + ']:', serverUrl.replace(/\/+$/, ''));
           return serverUrl.replace(/\/+$/, '');
         }
       }
 
-      // Handle relative URLs in schema servers
-      var firstServer = schema.servers[0].url;
-      if (firstServer && !firstServer.startsWith('http://') && !firstServer.startsWith('https://')) {
-        // Try to auto-detect from the current schema URL
-        console.debug('[API Base URL] Step 2 - Schema has relative server:', firstServer);
-        var detectedFromUrl = resolveApiBaseUrlFromSchemaUrl();
-        if (detectedFromUrl) {
-          // Append the relative path to the detected base
-          var relativePath = firstServer.replace(/^\//, '');
-          console.debug('[API Base URL] Step 2 - Appending relative path to detected:', detectedFromUrl + '/' + relativePath);
-          console.groupEnd();
-          return detectedFromUrl + '/' + relativePath;
+      // Handle relative server URLs: resolve against the schema file's origin
+      var firstServerUrl = (schema.servers[0].url || '').trim();
+      if (firstServerUrl) {
+        var schemaOrigin = resolveSchemaOrigin();
+        if (schemaOrigin) {
+          var relPath = firstServerUrl.startsWith('/') ? firstServerUrl : '/' + firstServerUrl;
+          var resolved2a = (schemaOrigin + relPath).replace(/\/+$/, '');
+          console.debug('[API Base URL] Step 2a - Resolved relative server URL:', resolved2a);
+          return resolved2a;
         }
       }
     }
 
-    // Step 3: Auto-detect from schema URL
-    var detected = resolveApiBaseUrlFromSchemaUrl();
-    if (detected) {
-      console.debug('[API Base URL] Step 3 - Auto-detected from schema URL:', detected);
-      console.groupEnd();
-      return detected;
+    // Step 2b: Swagger 2.0 — host + basePath + schemes
+    if (schema && schema.swagger && schema.host) {
+      var swaggerScheme = 'https';
+      if (schema.schemes && schema.schemes.length > 0) {
+        // Prefer https over http when both are listed
+        swaggerScheme = schema.schemes.indexOf('https') >= 0 ? 'https' : schema.schemes[0];
+      }
+      var swaggerBase = swaggerScheme + '://' + schema.host;
+      if (schema.basePath && schema.basePath !== '/') {
+        swaggerBase += schema.basePath.replace(/\/+$/, '');
+      }
+      console.debug('[API Base URL] Step 2b - Using Swagger 2.0 host+basePath:', swaggerBase);
+      return swaggerBase;
     }
 
-    // Step 4: Fallback to page origin (for local development)
-    console.warn('[API Base URL] Step 4 - Using fallback (page origin):', window.location.origin, '(This is likely incorrect for external schemas!)');
-    console.groupEnd();
+    // Step 3: Auto-detect from the schema file URL (use its origin as the API origin)
+    var detectedOrigin = resolveSchemaOrigin();
+    if (detectedOrigin) {
+      console.debug('[API Base URL] Step 3 - Auto-detected origin from schema URL:', detectedOrigin);
+      return detectedOrigin;
+    }
+
+    // Step 4: Context-aware fallback
+    // For pip-installed / docbuddy CLI deployments, window.location.origin IS the API server.
+    // For GitHub Pages / standalone, window.location.origin is the hosting site, NOT the API.
+    if (window.DOCBUDDY_VERSION === 'standalone') {
+      // Last resort for standalone: try the raw DOCBUDDY_OPENAPI_URL origin
+      var openapiUrl = window.DOCBUDDY_OPENAPI_URL || '';
+      if (openapiUrl.startsWith('http://') || openapiUrl.startsWith('https://')) {
+        try {
+          var fallbackOrigin = new URL(openapiUrl).origin;
+          console.warn('[API Base URL] Step 4 (standalone fallback) - Using schema URL origin:', fallbackOrigin,
+            '\nConsider setting "API Base URL" in Settings for more accurate routing.');
+          return fallbackOrigin;
+        } catch (e) {}
+      }
+      console.error('[API Base URL] Step 4 - Could not determine API base URL for standalone mode.',
+        'Please set "API Base URL" in the Settings tab.');
+      return '';
+    }
+
+    // Same-origin deployment (pip install / docbuddy CLI)
+    console.debug('[API Base URL] Step 4 - Same-origin deployment, using page origin:', window.location.origin);
     return window.location.origin.replace(/\/+$/, '');
   }
   DocBuddy.resolveApiBaseUrl = resolveApiBaseUrl;
 
   /**
-   * Try to auto-detect the API base URL from the currently loaded schema URL.
-   * E.g., https://example.com/api/swagger.json -> https://example.com/api
+   * Extract just the origin (scheme + host) from the currently loaded OpenAPI schema URL.
+   * E.g., https://stablehorde.net/api/swagger.json → https://stablehorde.net
+   *
+   * Returns null if the URL is relative or cannot be parsed.
    */
-  function resolveApiBaseUrlFromSchemaUrl() {
-    var targetUrl = window.DOCBUDDY_OPENAPI_URL || "/openapi.json";
+  function resolveSchemaOrigin() {
+    var targetUrl = window.DOCBUDDY_OPENAPI_URL || '';
 
-    // Handle relative URLs (assume they're on current origin)
-    if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-      try {
-        return window.location.origin + targetUrl.replace(/\/[^/]*$/, '').replace(/\/+$/, '');
-      } catch (e) {}
+    if (!targetUrl || (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://'))) {
       return null;
     }
 
-    // Parse the full URL and extract base path
     try {
-      var parsed = new URL(targetUrl);
-
-      // Remove filename from path to get directory
-      var pathname = parsed.pathname;
-      var lastSlashIdx = pathname.lastIndexOf('/');
-      if (lastSlashIdx > 0) {
-        pathname = pathname.substring(0, lastSlashIdx + 1);
-      }
-
-      return parsed.origin + pathname.replace(/\/+$/, '');
-    } catch (e) {}
-
-    // Log the error for debugging
-    console.error('[API Base URL] Failed to parse URL:', targetUrl, 'Error:', e);
-    return null;
+      return new URL(targetUrl).origin;
+    } catch (e) {
+      return null;
+    }
   }
 
   // ── Get system prompt for a preset ────────────────────────────────────────

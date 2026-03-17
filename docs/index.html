@@ -592,6 +592,61 @@ app = <span class="fn">FastAPI</span>()
           }
         }
 
+        // Auto-detect and persist the API base URL from the loaded schema.
+        // This ensures tool calls in Chat, Agent, and Workflow are routed to
+        // the correct API server rather than falling back to window.location.origin
+        // (which would be pearsonkyle.github.io on GitHub Pages).
+        try {
+          var detectedApiBase = null;
+
+          if (prefetchedSchema) {
+            // OpenAPI 3.0+: use first absolute server URL
+            if (prefetchedSchema.servers && prefetchedSchema.servers.length > 0) {
+              for (var si = 0; si < prefetchedSchema.servers.length; si++) {
+                var sUrl = (prefetchedSchema.servers[si].url || '').trim();
+                if (sUrl.startsWith('http://') || sUrl.startsWith('https://')) {
+                  detectedApiBase = sUrl.replace(/\/+$/, '');
+                  break;
+                }
+              }
+              // Relative server URL — resolve against schema file's origin
+              if (!detectedApiBase) {
+                var relServerUrl = (prefetchedSchema.servers[0].url || '').trim();
+                if (relServerUrl) {
+                  try {
+                    var schemaOrigin = new URL(schemaUrl).origin;
+                    var relPath = relServerUrl.startsWith('/') ? relServerUrl : '/' + relServerUrl;
+                    detectedApiBase = (schemaOrigin + relPath).replace(/\/+$/, '');
+                  } catch(e) {}
+                }
+              }
+            }
+
+            // Swagger 2.0: build from host + basePath + schemes
+            if (!detectedApiBase && prefetchedSchema.swagger && prefetchedSchema.host) {
+              var sw2Scheme = 'https';
+              if (prefetchedSchema.schemes && prefetchedSchema.schemes.length > 0) {
+                sw2Scheme = prefetchedSchema.schemes.indexOf('https') >= 0 ? 'https' : prefetchedSchema.schemes[0];
+              }
+              detectedApiBase = sw2Scheme + '://' + prefetchedSchema.host;
+              if (prefetchedSchema.basePath && prefetchedSchema.basePath !== '/') {
+                detectedApiBase += prefetchedSchema.basePath.replace(/\/+$/, '');
+              }
+            }
+          }
+
+          // Fallback: use the schema URL's origin (e.g. https://stablehorde.net)
+          if (!detectedApiBase) {
+            try { detectedApiBase = new URL(schemaUrl).origin; } catch(e) {}
+          }
+
+          if (detectedApiBase && window.DocBuddy && typeof window.DocBuddy.saveApiBaseUrl === 'function') {
+            window.DocBuddy.saveApiBaseUrl(detectedApiBase);
+          }
+        } catch(e) {
+          console.warn('[DocBuddy] Failed to auto-detect API base URL:', e);
+        }
+
         // Clear stale chat/agent history from previous schema sessions
         // so the Chat and Agent panels start fresh with the new API context
         try {
@@ -744,6 +799,21 @@ app = <span class="fn">FastAPI</span>()
         var btn = document.getElementById('load-btn');
         btn.innerHTML = 'Load';
         btn.disabled = false;
+
+        // Clear schema-specific state so the next loaded schema starts fresh.
+        // This prevents a previous API's base URL from leaking into the next one.
+        try { localStorage.removeItem('docbuddy-api-base-url'); } catch(e) {}
+        try { localStorage.removeItem('docbuddy-chat-history'); } catch(e) {}
+        try { localStorage.removeItem('docbuddy-agent-history'); } catch(e) {}
+
+        // Reset cached schema in DocBuddy namespace
+        if (window.DocBuddy) {
+          window.DocBuddy._cachedOpenapiSchema = null;
+          window.DocBuddy._openapiSchemaFetchPromise = null;
+          window.DocBuddy._schemaFetchUrl = null;
+          window.DocBuddy._schemaFetchFailed = false;
+        }
+        window.DOCBUDDY_OPENAPI_URL = null;
       }
 
       // ── Auto-load from query parameter on page load ─────────────────────────
