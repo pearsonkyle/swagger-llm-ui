@@ -32,6 +32,8 @@
           enableTools: ts.enableTools || false,
           autoExecute: ts.autoExecute || false,
           toolApiKey: ts.apiKey || '',
+          apiBaseUrl: DB.loadApiBaseUrl() || '',
+          autoDetectApiUrl: DB.loadAutoDetectApiUrl(),
           systemPromptPreset: s.systemPromptPreset || 'api_assistant',
           customSystemPrompt: s.customSystemPrompt || '',
         };
@@ -64,6 +66,8 @@
           autoExecute: this.state.autoExecute,
           apiKey: this.state.toolApiKey,
         });
+        DB.saveApiBaseUrl(this.state.apiBaseUrl || '');
+        DB.saveAutoDetectApiUrl(this.state.autoDetectApiUrl);
         DB.saveTheme({ theme: this.state.theme, customColors: this.state.customColors });
       }
 
@@ -240,6 +244,18 @@
 
       handleToolApiKeyChange(e) {
         this.setState({ toolApiKey: e.target.value });
+        this._debouncedSave();
+      }
+
+      handleApiBaseUrlChange(e) {
+        this.setState({ apiBaseUrl: e.target.value });
+        DB.dispatchAction(system, 'setToolApiKey', e.target.value);
+        this._debouncedSave();
+      }
+
+      handleAutoDetectApiUrlChange(e) {
+        var checked = e.target.checked;
+        this.setState({ autoDetectApiUrl: checked });
         this._debouncedSave();
       }
 
@@ -491,6 +507,50 @@
           )
         );
 
+        // API Base URL configuration section
+        var apiBaseUrlSection = React.createElement(
+          "div",
+          { style: { marginBottom: "24px", paddingBottom: "20px", borderBottom: "1px solid var(--theme-border-color)" } },
+          React.createElement("h3", { style: { color: "var(--theme-text-primary)", fontSize: "14px", fontWeight: "600", marginBottom: "12px" } }, "API Target Configuration"),
+          React.createElement(
+            "div",
+            { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "12px" } },
+            React.createElement(
+              "div",
+              { style: fieldStyle },
+              React.createElement("label", { style: labelStyle }, "API Base URL (Optional)"),
+              React.createElement("input", {
+                type: "text",
+                value: s.apiBaseUrl,
+                placeholder: "https://api.example.com (leave empty to auto-detect)",
+                style: inputStyle,
+                onChange: this.handleApiBaseUrlChange
+              }),
+              React.createElement("div", { style: { color: "var(--theme-text-secondary)", fontSize: "11px", marginTop: "4px" } },
+                "Override the base URL for tool calls. Leave empty to use OpenAPI schema servers or auto-detect from the loaded API URL."
+              )
+            ),
+            React.createElement(
+              "div",
+              { style: fieldStyle },
+              React.createElement(
+                "label",
+                { style: checkboxLabelStyle },
+                React.createElement("input", {
+                  type: "checkbox",
+                  checked: s.autoDetectApiUrl,
+                  onChange: this.handleAutoDetectApiUrlChange,
+                  style: checkboxStyle
+                }),
+                "Auto-detect from Schema URL"
+              ),
+              React.createElement("div", { style: { color: "var(--theme-text-secondary)", fontSize: "11px", marginTop: "4px" } },
+                "Automatically detect API base URL from the OpenAPI schema URL (e.g., https://example.com/api/swagger.json → https://example.com/api)"
+              )
+            )
+          )
+        );
+
         var testButton = React.createElement(
           "button",
           {
@@ -546,6 +606,7 @@
             ),
             fields
           ),
+          apiBaseUrlSection,
           React.createElement(
             "div",
             { style: { marginBottom: "24px", paddingBottom: "20px", borderBottom: "1px solid var(--theme-border-color)" } },

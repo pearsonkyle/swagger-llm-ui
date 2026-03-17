@@ -449,12 +449,13 @@
               }
             } catch (e) { console.warn('Failed to apply query params:', e); }
 
-            // Get the base URL from the OpenAPI schema if available, otherwise fall back to page origin
-            var apiBaseUrl = '';
-            if (DB._cachedOpenapiSchema && DB._cachedOpenapiSchema.servers && DB._cachedOpenapiSchema.servers.length > 0) {
-              apiBaseUrl = DB._cachedOpenapiSchema.servers[0].url.replace(/\/+$/, '');
-            }
-            url = (apiBaseUrl || window.location.origin) + url;
+            // Use the new resolveApiBaseUrl function which handles:
+            // 1. User-configured API Base URL (highest priority)
+            // 2. OpenAPI schema servers array
+            // 3. Auto-detect from loaded schema URL
+            // 4. Fallback to page origin (for local development)
+            var apiBaseUrl = DB.resolveApiBaseUrl(DB._cachedOpenapiSchema);
+            url = apiBaseUrl + url;
 
             var toolFetchHeaders = {};
             var tSettings = DB.loadToolSettings();

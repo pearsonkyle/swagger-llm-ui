@@ -97,6 +97,98 @@
   }
   DocBuddy.ensureSystemPromptConfig = ensureSystemPromptConfig;
 
+  /**
+   * Resolve the API base URL for tool calls.
+   * Priority order:
+   * 1. User-configured API Base URL (from Settings)
+   * 2. OpenAPI schema servers array (first valid absolute URL)
+   * 3. Auto-detect from loaded schema URL
+   * 4. Fallback: window.location.origin (for local development only)
+   *
+   * @param {Object} schema - The OpenAPI schema object
+   * @returns {string} The resolved base URL with trailing slash removed
+   */
+  function resolveApiBaseUrl(schema) {
+    // Step 1: Check user-configured API Base URL (highest priority)
+    var userConfiguredUrl = loadApiBaseUrl();
+    if (userConfiguredUrl && typeof userConfiguredUrl === 'string' && userConfiguredUrl.trim()) {
+      var trimmed = userConfiguredUrl.trim().replace(/\/+$/, '');
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        console.debug('[API Base URL] Using user-configured:', trimmed);
+        return trimmed;
+      }
+    }
+
+    // Step 2: Check OpenAPI schema servers array
+    if (schema && schema.servers && schema.servers.length > 0) {
+      for (var i = 0; i < schema.servers.length; i++) {
+        var serverUrl = schema.servers[i].url || '';
+        // Only use absolute URLs with protocol
+        if (serverUrl && (serverUrl.startsWith('http://') || serverUrl.startsWith('https://'))) {
+          console.debug('[API Base URL] Using schema servers[0]:', serverUrl.replace(/\/+$/, ''));
+          return serverUrl.replace(/\/+$/, '');
+        }
+      }
+
+      // Handle relative URLs in schema servers
+      var firstServer = schema.servers[0].url;
+      if (firstServer && !firstServer.startsWith('http://') && !firstServer.startsWith('https://')) {
+        // Try to auto-detect from the current schema URL
+        console.debug('[API Base URL] Schema has relative server:', firstServer);
+        var detectedFromUrl = resolveApiBaseUrlFromSchemaUrl();
+        if (detectedFromUrl) {
+          // Append the relative path to the detected base
+          var relativePath = firstServer.replace(/^\//, '');
+          return detectedFromUrl + '/' + relativePath;
+        }
+      }
+    }
+
+    // Step 3: Auto-detect from schema URL
+    var detected = resolveApiBaseUrlFromSchemaUrl();
+    if (detected) {
+      console.debug('[API Base URL] Auto-detected from schema URL:', detected);
+      return detected;
+    }
+
+    // Step 4: Fallback to page origin (for local development)
+    console.debug('[API Base URL] Using fallback (page origin):', window.location.origin);
+    return window.location.origin.replace(/\/+$/, '');
+  }
+  DocBuddy.resolveApiBaseUrl = resolveApiBaseUrl;
+
+  /**
+   * Try to auto-detect the API base URL from the currently loaded schema URL.
+   * E.g., https://example.com/api/swagger.json -> https://example.com/api
+   */
+  function resolveApiBaseUrlFromSchemaUrl() {
+    var targetUrl = window.DOCBUDDY_OPENAPI_URL || "/openapi.json";
+
+    // Handle relative URLs (assume they're on current origin)
+    if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+      try {
+        return window.location.origin + targetUrl.replace(/\/[^/]*$/, '').replace(/\/+$/, '');
+      } catch (e) {}
+      return null;
+    }
+
+    // Parse the full URL and extract base path
+    try {
+      var parsed = new URL(targetUrl);
+
+      // Remove filename from path to get directory
+      var pathname = parsed.pathname;
+      var lastSlashIdx = pathname.lastIndexOf('/');
+      if (lastSlashIdx > 0) {
+        pathname = pathname.substring(0, lastSlashIdx + 1);
+      }
+
+      return parsed.origin + pathname.replace(/\/+$/, '');
+    } catch (e) {}
+
+    return null;
+  }
+
   // ── Get system prompt for a preset ────────────────────────────────────────
   function getSystemPromptForPreset(presetName, openapiSchema, customPromptText) {
     // Handle custom user-provided prompt
@@ -597,6 +689,8 @@
   var TOOL_SETTINGS_KEY = "docbuddy-tool-settings";
   var WORKFLOW_STORAGE_KEY = 'docbuddy-workflow';
   var AGENT_HISTORY_KEY = 'docbuddy-agent-history';
+  var API_BASE_URL_KEY = "docbuddy-api-base-url";
+  var AUTO_DETECT_API_URL_KEY = "docbuddy-auto-detect-api-url";
 
   // ── In-memory cache for OpenAPI schema ────────────────────────────────────
   DocBuddy._cachedOpenapiSchema = null;
@@ -753,6 +847,45 @@
   }
   DocBuddy.saveToolSettings = saveToolSettings;
 
+  // ── API Base URL helpers ───────────────────────────────────────────────────
+  function loadApiBaseUrl() {
+    try {
+      var raw = localStorage.getItem(API_BASE_URL_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  DocBuddy.loadApiBaseUrl = loadApiBaseUrl;
+
+  function saveApiBaseUrl(url) {
+    try {
+      localStorage.setItem(API_BASE_URL_KEY, JSON.stringify(url));
+    } catch (e) {
+      // ignore
+    }
+  }
+  DocBuddy.saveApiBaseUrl = saveApiBaseUrl;
+
+  function loadAutoDetectApiUrl() {
+    try {
+      var raw = localStorage.getItem(AUTO_DETECT_API_URL_KEY);
+      return raw ? JSON.parse(raw) : true;
+    } catch (e) {
+      return true;
+    }
+  }
+  DocBuddy.loadAutoDetectApiUrl = loadAutoDetectApiUrl;
+
+  function saveAutoDetectApiUrl(enabled) {
+    try {
+      localStorage.setItem(AUTO_DETECT_API_URL_KEY, JSON.stringify(enabled));
+    } catch (e) {
+      // ignore
+    }
+  }
+  DocBuddy.saveAutoDetectApiUrl = saveAutoDetectApiUrl;
+
   // ── Workflow storage helpers ────────────────────────────────────────────────
   function loadWorkflow() {
     try {
@@ -817,6 +950,7 @@
   // ── Default state ───────────────────────────────────────────────────────────
   var storedSettings = loadFromStorage();
   var storedTheme = loadTheme();
+  var storedToolSettings = loadToolSettings();
 
   document.addEventListener('DOMContentLoaded', function() {
     window.applyLLMTheme(storedTheme.theme, storedTheme.customColors);
@@ -838,6 +972,10 @@
     lastError: "",
     theme: storedTheme.theme || "light",
     customColors: storedTheme.customColors || {},
+    // Tool settings
+    enableTools: storedToolSettings.enableTools || false,
+    autoExecute: storedToolSettings.autoExecute || false,
+    toolApiKey: storedToolSettings.apiKey || '',
   };
   DocBuddy.DEFAULT_STATE = DEFAULT_STATE;
 
@@ -939,6 +1077,10 @@
     setOpenApiSchema: function (schema) { return { type: SET_OPENAPI_SCHEMA, payload: schema }; },
     setTheme: function (value) { return { type: SET_THEME, payload: value }; },
     setCustomColor: function (value) { return { type: SET_CUSTOM_COLOR, payload: value }; },
+    // Tool settings actions
+    setEnableTools: function (value) { return { type: 'LLM_SET_ENABLE_TOOLS', payload: value }; },
+    setAutoExecute: function (value) { return { type: 'LLM_SET_AUTO_EXECUTE', payload: value }; },
+    setToolApiKey: function (value) { return { type: 'LLM_SET_TOOL_API_KEY', payload: value }; },
   };
   DocBuddy.actions = actions;
 
@@ -956,6 +1098,10 @@
     getLastError: function (state) { return state.lastError; },
     getTheme: function (state) { return state.theme; },
     getCustomColors: function (state) { return state.customColors; },
+    // Tool settings selectors
+    getEnableTools: function (state) { return state.enableTools || false; },
+    getAutoExecute: function (state) { return state.autoExecute || false; },
+    getToolApiKey: function (state) { return state.toolApiKey || ''; },
   };
   DocBuddy.selectors = selectors;
 
