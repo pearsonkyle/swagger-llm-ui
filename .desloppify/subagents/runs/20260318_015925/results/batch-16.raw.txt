@@ -1,0 +1,51 @@
+{
+  "batch": "initialization_coupling",
+  "batch_index": 16,
+  "assessments": {"initialization_coupling": 91.0},
+  "dimension_notes": {
+    "initialization_coupling": {
+      "evidence": [
+        "No environment variable reads at import time in any module",
+        "Path constants use Path(__file__).parent — deterministic, no file I/O at import time",
+        "StaticFiles mount and route registration happen inside setup_docs() at call time, not import time",
+        "No circular imports; cli.py is fully self-contained",
+        "The lazy importlib.metadata import inside get_swagger_ui_html() is correctly commented as an intentional circular-import workaround",
+        "Module-level _jinja_env Jinja2 Environment only records a path at construction; does not read template files until get_template() is called"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "In get_swagger_ui_html(), debug mode mutates _jinja_env.auto_reload and clears env.cache on the shared singleton without a lock — a thread safety concern at the boundary of initialization coupling"
+    }
+  },
+  "dimension_judgment": {
+    "initialization_coupling": {
+      "dimension_character": "The codebase demonstrates excellent initialization discipline: all I/O, environment reads, and framework wiring are deferred to explicit call time rather than import time. The one shared mutable singleton (_jinja_env) is carefully constructed and only mutated conditionally in debug mode.",
+      "score_rationale": "Score 91.0 reflects near-exemplary initialization hygiene with no boot-order hazards or import-time side effects. A small deduction for the unsynchronized mutation of the shared Jinja2 singleton in debug mode, which is a latent thread-safety issue rather than a pure initialization coupling defect."
+    }
+  },
+  "issues": [],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "initialization_coupling": {
+      "add": [
+        {
+          "header": "All framework wiring deferred to call time",
+          "description": "StaticFiles mount, route registration, and template environment setup all happen inside setup_docs() rather than at module import, ensuring no boot-order coupling.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Intentional lazy import for circular-import workaround",
+          "description": "importlib.metadata is imported inside get_swagger_ui_html() with an explicit comment explaining the circular-import avoidance — this is a deliberate, documented pattern.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

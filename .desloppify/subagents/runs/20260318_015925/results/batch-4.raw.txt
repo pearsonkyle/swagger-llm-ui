@@ -1,0 +1,112 @@
+{
+  "batch": "error_consistency",
+  "batch_index": 4,
+  "assessments": {
+    "error_consistency": 79.0
+  },
+  "dimension_notes": {
+    "error_consistency": {
+      "evidence": [
+        "Python layer (3 files, ~270 LOC): try/except PackageNotFoundError used identically in __init__.py and plugin.py for version lookup — coherent and intentional.",
+        "cli.py KeyboardInterrupt catch is a correct top-level boundary handler.",
+        "JS localStorage write helpers (saveTheme, saveToStorage, saveToolSettings, saveApiBaseUrl, saveWorkflow) all use try/catch with silent ignore — consistent pattern across the layer.",
+        "JS localStorage read helpers (loadChatHistory, loadAgentHistory, loadToolSettings) consistently return sensible defaults on failure.",
+        "Network fetch in core.js and workflow.js: .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); }) + .catch() chains — consistent strategy at the network boundary.",
+        "agent.js line 180 and workflow.js line 423: `try { url = decodeURIComponent(url); } catch (e) {}` — completely silent empty catch; if decoding fails, execution continues with the malformed URL silently.",
+        "agent.js line 201: catch (e) { console.warn('Failed to apply path params:', e); } — execution continues with un-substituted URL after logging; the warn is inconsistent with the silent catch on decodeURIComponent two lines above in the same flow.",
+        "core.js lines 961/969: loadWorkflow/saveWorkflow use empty catch (e) {} with no comment, unlike sibling load* functions which at least have explicit return statements or comments explaining intent.",
+        "core.js line 712: markdown parsing catch logs the error but returns undefined (falls through to plain text), which is a recoverable path — acceptable.",
+        "The JS codebase mixes three catch strategies in adjacent code: (1) silent empty catch {}, (2) console.warn + continue, (3) structured error object returned to UI. No consistent principle governing which to use where."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "medium",
+      "issues_preventing_higher_score": "The JS layer mixes three distinct catch strategies — silent empty catch, warn-and-continue, and structured error return — sometimes within the same function flow (agent.js handleExecuteToolCall). The empty catch on decodeURIComponent is particularly opaque: it swallows a potential URI malformation silently while the surrounding code does warn on adjacent failures. Callers cannot predict whether errors will surface."
+    }
+  },
+  "dimension_judgment": {
+    "error_consistency": {
+      "dimension_character": "The Python layer is small and consistent: PackageNotFoundError is handled identically in two places, and the CLI's KeyboardInterrupt boundary is intentional. The JS layer is significantly larger and shows a three-way split in catch philosophy — silent empty catches, warn-and-continue, and structured error objects returned to the UI — applied inconsistently across adjacent code paths in the same functions. The inconsistency is not systemic enough to be actively harmful, but it makes error behavior unpredictable at the module level.",
+      "score_rationale": "At the 80-point anchor a developer 'encounters mixed strategies across related code paths — some throw, some return null, some swallow — making error behavior hard to predict.' That description fits: the JS tool-execution paths in agent.js and workflow.js mix silent catches, warn-and-continue, and structured error returns within the same function body, with no clear principle governing which strategy to apply. The Python layer is coherent and earns full credit, but it is tiny relative to the JS codebase. The score lands just below 80 because the inconsistency is real and affects code paths that handle user-initiated API calls."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "silent_decode_uri_catch",
+      "summary": "Empty catch on decodeURIComponent in tool-call path leaves malformed URLs unlogged",
+      "related_files": [
+        "src/docbuddy/static/agent.js",
+        "src/docbuddy/static/workflow.js"
+      ],
+      "evidence": [
+        "agent.js line 180: `try { url = decodeURIComponent(url); } catch (e) {}` — exception is swallowed entirely",
+        "workflow.js line 423: identical pattern `try { url = decodeURIComponent(url); } catch (e) {}`",
+        "In agent.js, the adjacent path-param substitution block (line 201) logs `console.warn('Failed to apply path params:', e)` — inconsistent with the silent catch two lines earlier in the same function"
+      ],
+      "suggestion": "Replace the empty catch with at least a console.warn, matching the adjacent catch style: `catch (e) { console.warn('[Tool Call] Failed to decode URL:', url, e); }`. The URL is still usable in the catch — just add the warning so developers can diagnose encoding issues.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "mixed_catch_strategies_tool_execution",
+      "summary": "Three distinct catch strategies used interchangeably in tool-call execution without clear principle",
+      "related_files": [
+        "src/docbuddy/static/agent.js",
+        "src/docbuddy/static/chat.js",
+        "src/docbuddy/static/workflow.js"
+      ],
+      "evidence": [
+        "Strategy 1 — silent empty catch: `try { url = decodeURIComponent(url); } catch (e) {}` (agent.js line 180, workflow.js line 423)",
+        "Strategy 2 — warn-and-continue: `catch (e) { console.warn('Failed to apply path params:', e); }` (agent.js line 201, chat.js line 165, workflow.js line 419) — execution silently continues with unsubstituted URL",
+        "Strategy 3 — structured error returned to UI: `catch (e) { var parseErrObj = { status: 0, statusText: 'Invalid JSON', body: ... }; self.sendToolResult(parseErrObj); }` (agent.js line 242)",
+        "All three strategies appear in the same handleExecuteToolCall function flow, making it unclear which failures surface to the user and which are swallowed"
+      ],
+      "suggestion": "Define a consistent policy for the tool-call execution path: parse/decode failures that produce a bad request should surface a structured error to the UI (strategy 3) rather than warn-and-continue. Reserve silent catches only for truly non-critical operations (e.g., URL object construction where a fallback exists). Applying strategy 3 to path-param substitution failures would also eliminate the warn-and-continue silent-bad-request risk.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "JS error handling evolved incrementally — each catch was added in isolation without a cross-cutting policy, resulting in three divergent styles in adjacent code"
+    ],
+    "likely_symptoms": [
+      "silent_decode_uri_catch"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "error_consistency": {
+      "add": [
+        {
+          "header": "Python try/except PackageNotFoundError used consistently",
+          "description": "Both __init__.py and plugin.py handle the same PackageNotFoundError from importlib.metadata in the same way — fallback to 'unknown'. This is a deliberate, symmetric pattern for version detection in installed vs. editable environments.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "localStorage write helpers uniformly use silent catch",
+          "description": "All save* helpers in core.js (saveTheme, saveToStorage, saveToolSettings, saveApiBaseUrl, saveAutoDetectApiUrl, saveWorkflow, saveAgentHistory) use try/catch with silent ignore. This is a consistent and intentional pattern — localStorage writes failing is non-critical in a UI plugin context.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Network fetch errors consistently use .catch() chains with UI feedback",
+          "description": "core.js schema fetch, workflow.js LLM streaming, and agent.js tool execution all use .catch() to capture network errors and surface them as structured objects to the UI. The network boundary is handled coherently.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Three-way catch strategy split in JS tool-call paths",
+          "description": "The JS tool-execution flow uses silent empty catch, warn-and-continue, and structured-error-to-UI interchangeably within the same function bodies (agent.js, chat.js, workflow.js). No consistent principle governs which failures surface to the user vs. are swallowed.",
+          "settled": false,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

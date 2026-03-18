@@ -1,0 +1,80 @@
+{
+  "batch": "design_coherence",
+  "batch_index": 17,
+  "assessments": {
+    "design_coherence": 82.0
+  },
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "get_swagger_ui_html() assigns env = _jinja_env (same object reference), then mutates env.auto_reload = True and calls env.cache.clear() when debug=True — permanently modifying the module-level singleton on first debug call; subsequent non-debug calls inherit auto_reload=True",
+        "setup_docs() and get_swagger_ui_html() both declare the same 6 CDN/SRI/theme parameters with identical defaults — duplication requires two-site edits when CDN versions change",
+        "cli.py main() is a cohesive entry point despite covering several steps (arg parse, file check, server setup, browser thread, serve_forever) — correctly scoped as a CLI boot sequence",
+        "_pkg_dir() is a well-focused single-purpose helper with no design issues",
+        "setup_docs() uses _route_lock, _llm_apps WeakSet, and structured route filtering — idiomatic and focused"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "get_swagger_ui_html mutates the module-level _jinja_env singleton through a local alias on every debug=True call — a persistent, irreversible side effect hidden inside what reads as a pure rendering function; the setup_docs / get_swagger_ui_html parameter duplication creates a two-site maintenance burden for CDN version updates"
+    }
+  },
+  "dimension_judgment": {
+    "design_coherence": {
+      "dimension_character": "The codebase is small and its functions are mostly well-focused for their domain — a CLI entry point, a route-setup orchestrator, and a template renderer. The dominant design coherence defect is in get_swagger_ui_html: assigning the module-level Jinja environment to a local alias and then mutating it via that alias permanently sets auto_reload=True on the singleton after the first debug call, hiding a persistent state change inside a function that otherwise reads as a stateless renderer. The parameter duplication across the two public functions is a maintenance friction point but not a structural violation given the rubric.",
+      "score_rationale": "At the 80-level anchor, a developer regularly encounters functions doing too many things or side effects that obscure intent. The debug-mode mutation of shared Jinja env state is a concrete instance: it silently makes a module-level configuration change permanent, which a developer reading the rendering function would not anticipate. Beyond that one issue, the codebase is well-structured and appropriately simple for its size, placing the score just above the 80 anchor."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "jinja_env_debug_mutation",
+      "summary": "get_swagger_ui_html permanently mutates the module-level Jinja env via local alias when debug=True",
+      "related_files": ["src/docbuddy/plugin.py"],
+      "evidence": [
+        "Line 57: env = _jinja_env assigns the same object reference, not a copy",
+        "Lines 61-63: env.auto_reload = True and env.cache.clear() are called when debug=True — these mutate the shared singleton",
+        "After one debug=True call, auto_reload stays True for all subsequent requests regardless of debug parameter value — a permanent, irreversible side effect"
+      ],
+      "suggestion": "Move the debug-mode Jinja configuration to module initialization or to setup_docs (which has the debug parameter at setup time, not per-request). In get_swagger_ui_html, if debug behaviour is needed per-call, create a separate Environment instance rather than mutating the shared one: e.g., `env = Environment(loader=...) if debug else _jinja_env`.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "concern_verdict": "confirmed",
+      "concern_fingerprint": "ce32420f14ebb4c1"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Shared mutable module-level state (Jinja env singleton) modified from within a per-request function — debug concern should be handled at setup/init time"
+    ],
+    "likely_symptoms": [],
+    "possible_false_positives": [
+      "interface_design signal on plugin.py flagged 10 parameters — the CDN/SRI params are individually meaningful keyword-only args with documented defaults; grouping them into a config object would obscure meaning per the skip rules"
+    ]
+  },
+  "context_updates": {
+    "design_coherence": {
+      "add": [
+        {
+          "header": "CLI main() is a cohesive entry point",
+          "description": "Despite covering argument parsing, file validation, server setup, browser threading, and serving, main() in cli.py follows a linear boot sequence with a single coherent responsibility — launching the standalone server. No multi-concern mixing.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "setup_docs uses idiomatic route management",
+          "description": "setup_docs correctly uses a threading lock, a WeakSet for deduplication, and structured route filtering — all focused on safely mutating FastAPI's route table once. The approach is appropriate and well-scoped.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "debug-mode mutates shared Jinja env singleton",
+          "description": "get_swagger_ui_html aliases _jinja_env to a local var and then mutates it (auto_reload, cache.clear) when debug=True. After one debug call the singleton is permanently reconfigured — a hidden persistent side effect inside a function that otherwise reads as stateless.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

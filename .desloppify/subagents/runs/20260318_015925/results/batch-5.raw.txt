@@ -1,0 +1,68 @@
+{
+  "batch": "naming_quality",
+  "batch_index": 5,
+  "assessments": {
+    "naming_quality": 84.0
+  },
+  "dimension_notes": {
+    "naming_quality": {
+      "evidence": [
+        "Most names in the 3-file codebase are precise and intent-revealing: setup_docs, _pkg_dir, resolved_title, resolved_openapi_url, _route_lock, _llm_apps, already_mounted.",
+        "get_swagger_ui_html() carries a get_ prefix implying a pure read but conditionally mutates the shared module-level _jinja_env: sets env.auto_reload = True and calls env.cache.clear() when debug=True. This side effect is hidden behind a getter name.",
+        "The local alias `env = _jinja_env` in get_swagger_ui_html adds no clarity; it is an unnecessary indirection that slightly obscures which object is being mutated.",
+        "cli.py's main() follows standard Python console_scripts convention so the generic name is acceptable as an entry point idiom.",
+        "Variable name collision risk in get_swagger_ui_html: the parameter is named `version` and the local fallback is named `pkg_version` — two near-identical concepts in the same scope."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "get_swagger_ui_html() mutates shared module state (env.auto_reload, env.cache.clear) inside a function whose get_ prefix signals a pure read. The side effect is real and scoped to debug=True, but the name actively misleads callers about the function's behavior."
+    }
+  },
+  "dimension_judgment": {
+    "naming_quality": {
+      "dimension_character": "Naming across the small codebase is largely precise and intent-communicating: setup_docs, _route_lock, resolved_title, _llm_apps all tell the developer exactly what they are for. The one concrete mismatch — get_swagger_ui_html() mutating the shared Jinja2 environment behind a getter name — is an isolated but meaningful violation of the get_ contract that the rubric explicitly flags.",
+      "score_rationale": "A developer can read almost every name in this codebase and correctly predict behavior without opening the implementation. The get_swagger_ui_html name/behavior mismatch (hidden mutation of _jinja_env) is a real but isolated defect in a 269-LOC codebase. This places the score at solid-but-slightly-uneven territory — around 84 — because the issue is real and the rubric explicitly calls it out, but it does not recur and the rest of the naming is strong."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "get_swagger_ui_html_mutates_state",
+      "summary": "get_swagger_ui_html() mutates shared _jinja_env state in debug mode despite its get_ prefix implying a pure read",
+      "related_files": ["src/docbuddy/plugin.py"],
+      "evidence": [
+        "Line 57: `env = _jinja_env` — assigns the shared module-level environment to a local alias.",
+        "Lines 60-63: when debug=True, sets `env.auto_reload = True` and calls `env.cache.clear()` — both mutate the shared module-level _jinja_env object.",
+        "The function signature and name (get_swagger_ui_html) signal a pure HTML-returning getter, but it has a conditional side effect on shared state."
+      ],
+      "suggestion": "Rename to render_swagger_ui_html or build_swagger_ui_html to communicate that the function constructs/renders a response (and may configure its environment). Alternatively, move the debug-mode env configuration to setup_docs or a dedicated _configure_jinja_env(debug) helper called at setup time, keeping get_swagger_ui_html purely a renderer.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Single get_ name/behavior mismatch in an otherwise well-named small codebase"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "naming_quality": {
+      "add": [
+        {
+          "header": "Precise descriptive names throughout plugin.py",
+          "description": "setup_docs, _route_lock, resolved_title, resolved_openapi_url, already_mounted, and _llm_apps all communicate intent unambiguously. The naming vocabulary is consistent and domain-aligned.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "get_swagger_ui_html has hidden mutation behind getter name",
+          "description": "The function mutates the shared module-level _jinja_env (auto_reload and cache.clear) when debug=True, violating the expectation that get_ prefixed functions are pure readers. This is an isolated defect, not a systemic pattern.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

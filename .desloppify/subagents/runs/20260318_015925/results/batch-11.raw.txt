@@ -1,0 +1,82 @@
+{
+  "batch": "api_surface_coherence",
+  "batch_index": 11,
+  "assessments": {"api_surface_coherence": 76.0},
+  "dimension_notes": {
+    "api_surface_coherence": {
+      "evidence": [
+        "Both public functions (get_swagger_ui_html, setup_docs) use keyword-only parameters after *, preventing positional ordering mistakes",
+        "__init__.py exports only 2 symbols via __all__, keeping the public surface minimal and explicit",
+        "get_swagger_ui_html has a version: Optional[str] = None parameter (plugin.py line 40) that setup_docs does not expose — asymmetric surface between the two public functions",
+        "version parameter is also absent from the get_swagger_ui_html docstring Args section",
+        "setup_docs silently returns early when app already configured (if app in _llm_apps: return, lines 124-126) with no observable signal — no return value, no warning, no exception",
+        "Idempotency contract of setup_docs not documented in docstring"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "version parameter asymmetry between get_swagger_ui_html and setup_docs; undocumented silent no-op on duplicate setup_docs calls"
+    }
+  },
+  "dimension_judgment": {
+    "api_surface_coherence": {
+      "dimension_character": "The public API surface is minimal (2 symbols) and uses keyword-only parameters throughout. The main coherence gap is that get_swagger_ui_html exposes a version parameter that setup_docs (the higher-level wrapper) does not thread through, creating an asymmetry where the low-level function has more control than the high-level one. The undocumented idempotency of setup_docs is a secondary coherence gap.",
+      "score_rationale": "Score 76 reflects a mostly coherent surface with two concrete gaps: a parameter asymmetry between the two public functions that forces callers to drop down to the lower-level API for version control, and a silent no-op behavior that callers cannot detect without reading source."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "version_param_asymmetry",
+      "summary": "get_swagger_ui_html exposes version parameter that setup_docs does not thread through",
+      "related_files": ["src/docbuddy/plugin.py"],
+      "evidence": [
+        "get_swagger_ui_html signature (line 40): version: Optional[str] = None",
+        "setup_docs signature: no version parameter",
+        "Callers using setup_docs (the high-level API) cannot control the displayed version without bypassing to get_swagger_ui_html directly"
+      ],
+      "suggestion": "Add version: Optional[str] = None to setup_docs and thread it through to the get_swagger_ui_html call, or remove version from get_swagger_ui_html and always resolve internally, making the two functions symmetric.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "setup_docs_silent_noop",
+      "summary": "setup_docs silently no-ops on duplicate calls with no observable signal to caller",
+      "related_files": ["src/docbuddy/plugin.py"],
+      "evidence": [
+        "Lines 124-126: if app in _llm_apps: return — silent return with no warning, no return value, no exception",
+        "Docstring does not mention this idempotency behavior",
+        "Callers cannot detect accidental double-setup"
+      ],
+      "suggestion": "Document the idempotency contract in the setup_docs docstring. Optionally emit warnings.warn() so callers can detect accidental double-setup during development.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["version parameter added to low-level function without propagating to high-level wrapper"],
+    "likely_symptoms": ["version_param_asymmetry"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "api_surface_coherence": {
+      "add": [
+        {
+          "header": "Keyword-only parameters prevent ordering mistakes",
+          "description": "Both public functions use * in their signatures to force all parameters to be keyword-only. This is a strong API design choice for functions with many optional parameters.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "version parameter asymmetry between low and high-level functions",
+          "description": "get_swagger_ui_html exposes a version parameter not available through setup_docs, forcing callers who need version control to bypass the high-level API.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

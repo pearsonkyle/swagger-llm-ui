@@ -1,0 +1,56 @@
+{
+  "batch": "authorization_consistency",
+  "batch_index": 12,
+  "assessments": {
+    "authorization_consistency": 92.0
+  },
+  "dimension_notes": {
+    "authorization_consistency": {
+      "evidence": [
+        "plugin.py contains exactly one route handler (custom_docs at /docs) with no auth decorator — matches standard Swagger UI behavior which is intentionally public developer tooling",
+        "cli.py serves a standalone local HTTP server via http.server.SimpleHTTPRequestHandler with no auth — appropriate for a local dev tool invoked by the developer themselves",
+        "No auth framework imports anywhere (no fastapi.security, no Depends(get_current_user), no middleware)",
+        "No permission strings (magic literals or shared constants) exist — there is no permission system to be inconsistent about",
+        "No admin bypass patterns, RLS, service role bypasses, or differential trust boundaries",
+        "The single route has include_in_schema=False, consistent with it being an infrastructure/tooling endpoint rather than a business API endpoint",
+        "Mechanical scanner signal (with_auth: 0, without_auth: 1) reflects the intentionally public nature of a docs UI page"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "The CLI server uses http.server.SimpleHTTPRequestHandler which serves all files in the package directory without any restriction — if the package directory ever contains sensitive files, there is no auth gate. This is a latent risk rather than a current defect, and the tool is local-only by default binding to localhost."
+    }
+  },
+  "dimension_judgment": {
+    "authorization_consistency": {
+      "dimension_character": "This codebase is a documentation UI plugin with a single route (the /docs page) that is intentionally unauthenticated, mirroring FastAPI's own default /docs behavior. With only one route handler and no differential auth treatment across sibling routes, there is no inconsistency to find. The CLI tool similarly serves a local dev server without auth, appropriate for its localhost-only scope.",
+      "score_rationale": "The score anchors near 90 because the codebase applies its (minimal) auth posture consistently — the one route is consistently unauthenticated in the same way FastAPI's built-in /docs is. The small deduction from 95+ reflects that the CLI server's use of SimpleHTTPRequestHandler exposes the entire package directory without any path restriction, which is a latent trust boundary concern even if currently benign given localhost binding."
+    }
+  },
+  "issues": [],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": [
+      "mechanical_signal_without_auth: The scanner's 'without_auth: 1' signal on plugin.py is a false positive for this project — the /docs endpoint is intentionally public documentation tooling with no auth expectation, matching FastAPI's own default behavior"
+    ]
+  },
+  "context_updates": {
+    "authorization_consistency": {
+      "add": [
+        {
+          "header": "Single public docs route, no auth framework",
+          "description": "The codebase is a documentation UI plugin. Its only route (/docs) is intentionally unauthenticated, matching FastAPI's default Swagger UI behavior. No auth framework is imported anywhere; there is no inconsistency because there is no differential auth requirement.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "CLI server scoped to localhost, no auth needed",
+          "description": "The CLI standalone server binds to localhost by default and serves developer tooling files. The lack of auth is appropriate for this local dev use case.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

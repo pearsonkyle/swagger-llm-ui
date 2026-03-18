@@ -1,0 +1,54 @@
+{
+  "batch": "incomplete_migration",
+  "batch_index": 14,
+  "assessments": {
+    "incomplete_migration": 97.0
+  },
+  "dimension_notes": {
+    "incomplete_migration": {
+      "evidence": [
+        "No deprecated symbols, @deprecated annotations, or DEPRECATED markers found anywhere in src/ or tests/",
+        "No migration-related TODO/FIXME comments ('migrate', 'legacy', 'old api', 'remove after') found in any Python or JS file",
+        "No mixed JS/TS files — all frontend code is pure ES6+ plain JS IIFEs; no TypeScript migration in progress or abandoned",
+        "No coexisting old/new API patterns in Python (no class-based alongside function-based views, no dual HTTP client libraries)",
+        "__init__.py __all__ is clean: ['setup_docs', 'get_swagger_ui_html'] — no exported compatibility aliases",
+        "holistic_context.migration_signals is empty {} — mechanical scan found no migration signals",
+        "A stale config.cpython-311.pyc artifact exists in __pycache__ with no corresponding config.py source, suggesting a past config module was removed; this is in the gitignored __pycache__/ directory and is not a tracked or active code concern"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "A stale config.cpython-311.pyc artifact in __pycache__ hints that a config module was deleted during a past refactor, but this is a gitignored build artifact and carries no practical code quality risk. No active incomplete-migration patterns were found."
+    }
+  },
+  "dimension_judgment": {
+    "incomplete_migration": {
+      "dimension_character": "The codebase shows no evidence of incomplete migration: no deprecated-but-called symbols, no dual-paradigm coexistence, no stale shims, and no migration-marked TODOs in any Python or JavaScript file. The package is a compact, single-paradigm implementation (plain ES6 JS frontend, three-file Python backend) that appears to have reached a consistent state with no visible migration debt.",
+      "score_rationale": "At the 97 anchor this approaches exemplary. The codebase has zero active migration residue across all 3 Python source files and 6 JS files. The only note is a stale config.cpython-311.pyc in the gitignored __pycache__ directory, which is not a code quality issue and does not affect developer experience. A score below 95 would require finding actual active migration patterns, which are absent here."
+    }
+  },
+  "issues": [],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "incomplete_migration": {
+      "add": [
+        {
+          "header": "No migration debt in Python or JS surface",
+          "description": "The entire codebase (3 Python files, 6 JS files) contains zero deprecated symbols, stale shims, migration TODOs, or coexisting old/new API patterns. The mechanical migration_signals scan also returned empty, confirming this is a settled state.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Single-paradigm JS frontend, no TS migration",
+          "description": "All frontend code is plain ES6+ IIFEs with no TypeScript files present anywhere. There is no partial or abandoned TypeScript migration to contend with.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,3490 @@
+{
+  "version": 3,
+  "created": "2026-03-18T01:37:22+00:00",
+  "last_scan": "2026-03-18T03:26:23+00:00",
+  "scan_count": 4,
+  "overall_score": 81.9,
+  "objective_score": 79.8,
+  "strict_score": 81.9,
+  "verified_strict_score": 79.8,
+  "stats": {
+    "total": 55,
+    "auto_resolved": 0,
+    "deferred": 0,
+    "false_positive": 0,
+    "fixed": 21,
+    "open": 34,
+    "triaged_out": 0,
+    "wontfix": 0,
+    "by_tier": {
+      "1": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 1,
+        "open": 17,
+        "triaged_out": 0,
+        "wontfix": 0
+      },
+      "2": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 0,
+        "open": 7,
+        "triaged_out": 0,
+        "wontfix": 0
+      },
+      "3": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 0,
+        "open": 9,
+        "triaged_out": 0,
+        "wontfix": 0
+      },
+      "4": {
+        "auto_resolved": 0,
+        "deferred": 0,
+        "false_positive": 0,
+        "fixed": 20,
+        "open": 1,
+        "triaged_out": 0,
+        "wontfix": 0
+      }
+    }
+  },
+  "work_items": {
+    "structural::tests/test_plugin.py": {
+      "id": "structural::tests/test_plugin.py",
+      "detector": "structural",
+      "file": "tests/test_plugin.py",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "Large file: large (2069 LOC)",
+      "detail": {
+        "loc": 2069
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T03:26:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "test",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "structural::src/docbuddy/plugin.py": {
+      "id": "structural::src/docbuddy/plugin.py",
+      "detector": "structural",
+      "file": "src/docbuddy/plugin.py",
+      "tier": 3,
+      "confidence": "medium",
+      "summary": "Large file: complexity score 54",
+      "detail": {
+        "complexity_score": 54,
+        "complexity_signals": [
+          "function with 10 params",
+          "nesting depth 20"
+        ],
+        "loc": 179
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T02:20:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "test_coverage::src/docbuddy/cli.py::untested_module": {
+      "id": "test_coverage::src/docbuddy/cli.py::untested_module",
+      "detector": "test_coverage",
+      "file": "src/docbuddy/cli.py",
+      "tier": 3,
+      "confidence": "high",
+      "summary": "Untested module (78 LOC, 0 importers)",
+      "detail": {
+        "kind": "untested_module",
+        "loc": 78,
+        "importer_count": 0,
+        "loc_weight": 8.831760866327848
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T03:26:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "smells::src/docbuddy/cli.py::annotation_quality": {
+      "id": "smells::src/docbuddy/cli.py::annotation_quality",
+      "detector": "smells",
+      "file": "src/docbuddy/cli.py",
+      "tier": 3,
+      "confidence": "medium",
+      "summary": "1x Loose type annotation \u2014 use specific types",
+      "detail": {
+        "smell_id": "annotation_quality",
+        "severity": "medium",
+        "count": 1,
+        "lines": [
+          19
+        ]
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T02:20:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "smells::src/docbuddy/cli.py::hardcoded_url": {
+      "id": "smells::src/docbuddy/cli.py::hardcoded_url",
+      "detector": "smells",
+      "file": "src/docbuddy/cli.py",
+      "tier": 3,
+      "confidence": "medium",
+      "summary": "1x Hardcoded URL in source code",
+      "detail": {
+        "smell_id": "hardcoded_url",
+        "severity": "medium",
+        "count": 1,
+        "lines": [
+          60
+        ]
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T03:26:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "smells::src/docbuddy/plugin.py::hardcoded_url": {
+      "id": "smells::src/docbuddy/plugin.py::hardcoded_url",
+      "detector": "smells",
+      "file": "src/docbuddy/plugin.py",
+      "tier": 3,
+      "confidence": "medium",
+      "summary": "4x Hardcoded URL in source code",
+      "detail": {
+        "smell_id": "hardcoded_url",
+        "severity": "medium",
+        "count": 4,
+        "lines": [
+          36,
+          37,
+          94,
+          95
+        ]
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T03:26:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "smells::src/docbuddy/plugin.py::optional_param_sprawl": {
+      "id": "smells::src/docbuddy/plugin.py::optional_param_sprawl",
+      "detector": "smells",
+      "file": "src/docbuddy/plugin.py",
+      "tier": 3,
+      "confidence": "medium",
+      "summary": "2x Too many optional params \u2014 consider a config object",
+      "detail": {
+        "smell_id": "optional_param_sprawl",
+        "severity": "medium",
+        "count": 2,
+        "lines": [
+          32,
+          88
+        ]
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T03:26:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "smells::src/docbuddy/plugin.py::deferred_import": {
+      "id": "smells::src/docbuddy/plugin.py::deferred_import",
+      "detector": "smells",
+      "file": "src/docbuddy/plugin.py",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "1x Function-level import (possible circular import workaround)",
+      "detail": {
+        "smell_id": "deferred_import",
+        "severity": "low",
+        "count": 1,
+        "lines": [
+          66
+        ]
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T02:20:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "smells::tests/test_plugin.py::broad_except": {
+      "id": "smells::tests/test_plugin.py::broad_except",
+      "detector": "smells",
+      "file": "tests/test_plugin.py",
+      "tier": 3,
+      "confidence": "low",
+      "summary": "1x Broad except \u2014 check library exceptions before narrowing",
+      "detail": {
+        "smell_id": "broad_except",
+        "severity": "medium",
+        "count": 1,
+        "lines": [
+          289
+        ]
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T03:26:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "zone": "test",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "subjective_review::.::abstraction_fitness": {
+      "id": "subjective_review::.::abstraction_fitness",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Abstraction fit \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "abstraction_fitness"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::ai_generated_debt": {
+      "id": "subjective_review::.::ai_generated_debt",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "AI generated debt \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "ai_generated_debt"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::api_surface_coherence": {
+      "id": "subjective_review::.::api_surface_coherence",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "API coherence \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "api_surface_coherence"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::authorization_consistency": {
+      "id": "subjective_review::.::authorization_consistency",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Auth consistency \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "authorization_consistency"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::contract_coherence": {
+      "id": "subjective_review::.::contract_coherence",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Contracts \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "contract_coherence"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::convention_outlier": {
+      "id": "subjective_review::.::convention_outlier",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Convention drift \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "convention_outlier"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::cross_module_architecture": {
+      "id": "subjective_review::.::cross_module_architecture",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Cross-module arch \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "cross_module_architecture"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::dependency_health": {
+      "id": "subjective_review::.::dependency_health",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Dep health \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "dependency_health"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::design_coherence": {
+      "id": "subjective_review::.::design_coherence",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Design coherence \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "design_coherence"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::error_consistency": {
+      "id": "subjective_review::.::error_consistency",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Error consistency \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "error_consistency"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::high_level_elegance": {
+      "id": "subjective_review::.::high_level_elegance",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "High elegance \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "high_level_elegance"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::incomplete_migration": {
+      "id": "subjective_review::.::incomplete_migration",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Stale migration \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "incomplete_migration"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::initialization_coupling": {
+      "id": "subjective_review::.::initialization_coupling",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Init coupling \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "initialization_coupling"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::logic_clarity": {
+      "id": "subjective_review::.::logic_clarity",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Logic clarity \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "logic_clarity"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::low_level_elegance": {
+      "id": "subjective_review::.::low_level_elegance",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Low elegance \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "low_level_elegance"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::mid_level_elegance": {
+      "id": "subjective_review::.::mid_level_elegance",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Mid elegance \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "mid_level_elegance"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::naming_quality": {
+      "id": "subjective_review::.::naming_quality",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Naming quality \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "naming_quality"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::package_organization": {
+      "id": "subjective_review::.::package_organization",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Structure nav \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "package_organization"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::test_strategy": {
+      "id": "subjective_review::.::test_strategy",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Test strategy \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "test_strategy"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "subjective_review::.::type_safety": {
+      "id": "subjective_review::.::type_safety",
+      "detector": "subjective_review",
+      "file": ".",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Type safety \u2014 no assessment on record, run `desloppify review --prepare`",
+      "detail": {
+        "reason": "unassessed",
+        "dimension": "type_safety"
+      },
+      "status": "fixed",
+      "note": "Still absent from scan after manual resolution",
+      "first_seen": "2026-03-18T01:37:22+00:00",
+      "last_seen": "2026-03-18T01:37:22+00:00",
+      "resolved_at": "2026-03-18T02:20:20+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "assessment_request",
+      "issue_kind": "assessment_request",
+      "origin": "synthetic_task",
+      "lang": "python",
+      "zone": "production",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "agent_import",
+        "text": "Dimension assessment imported; coverage marker superseded",
+        "attested_at": "2026-03-18T02:20:20+00:00",
+        "scan_verified": true,
+        "scan_verified_at": "2026-03-18T03:26:23+00:00",
+        "scan_verification_text": "Absent from detector output in latest scan"
+      }
+    },
+    "review::.::holistic::cross_module_architecture::misleading_circular_import_comment": {
+      "id": "review::.::holistic::cross_module_architecture::misleading_circular_import_comment",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Function-level stdlib import in plugin.py claims to avoid a circular import that cannot exist",
+      "detail": {
+        "holistic": true,
+        "dimension": "cross_module_architecture",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "plugin.py line 65-66: '# Import version here to avoid circular import with __init__.py' followed by 'from importlib.metadata import version as get_version, PackageNotFoundError'",
+          "importlib.metadata is a Python stdlib module with no dependency on docbuddy; importing it at module scope cannot create a circular import.",
+          "__init__.py imports from importlib.metadata at module scope (line 3) without any issue, confirming there is no cycle."
+        ],
+        "suggestion": "Move the import to module scope alongside the other stdlib imports at the top of plugin.py and remove the misleading comment. The module-scope import 'from importlib.metadata import version as get_version, PackageNotFoundError' is safe and consistent with how __init__.py already uses it.",
+        "reasoning": "",
+        "summary_hash": "2dedd3c4"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::convention_outlier::llm_settings_panel_naming_drift": {
+      "id": "review::.::holistic::convention_outlier::llm_settings_panel_naming_drift",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "LLMSettingsPanel has LLM prefix absent from all sibling panels (ChatPanel, WorkflowPanel, AgentPanel)",
+      "detail": {
+        "holistic": true,
+        "dimension": "convention_outlier",
+        "related_files": [
+          "src/docbuddy/static/settings.js",
+          "src/docbuddy/static/plugin.js"
+        ],
+        "evidence": [
+          "settings.js exports LLMSettingsPanel and LLMSettingsPanelFactory",
+          "Sibling panels: ChatPanel (chat.js), WorkflowPanel (workflow.js), AgentPanel (agent.js) \u2014 no LLM prefix",
+          "plugin.js Swagger plugin registry references LLMSettingsPanel \u2014 the outlier name propagates"
+        ],
+        "suggestion": "Rename LLMSettingsPanel -> SettingsPanel and LLMSettingsPanelFactory -> SettingsPanelFactory in settings.js and update all references in plugin.js (and any cross-references in chat.js/agent.js).",
+        "reasoning": "",
+        "summary_hash": "cc6be195"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::silent_decode_uri_catch": {
+      "id": "review::.::holistic::error_consistency::silent_decode_uri_catch",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Empty catch on decodeURIComponent in tool-call path leaves malformed URLs unlogged",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/docbuddy/static/agent.js",
+          "src/docbuddy/static/workflow.js"
+        ],
+        "evidence": [
+          "agent.js line 180: `try { url = decodeURIComponent(url); } catch (e) {}` \u2014 exception is swallowed entirely",
+          "workflow.js line 423: identical pattern `try { url = decodeURIComponent(url); } catch (e) {}`",
+          "In agent.js, the adjacent path-param substitution block (line 201) logs `console.warn('Failed to apply path params:', e)` \u2014 inconsistent with the silent catch two lines earlier in the same function"
+        ],
+        "suggestion": "Replace the empty catch with at least a console.warn, matching the adjacent catch style: `catch (e) { console.warn('[Tool Call] Failed to decode URL:', url, e); }`. The URL is still usable in the catch \u2014 just add the warning so developers can diagnose encoding issues.",
+        "reasoning": "",
+        "summary_hash": "4bffb3fa"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::error_consistency::mixed_catch_strategies_tool_execution": {
+      "id": "review::.::holistic::error_consistency::mixed_catch_strategies_tool_execution",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Three distinct catch strategies used interchangeably in tool-call execution without clear principle",
+      "detail": {
+        "holistic": true,
+        "dimension": "error_consistency",
+        "related_files": [
+          "src/docbuddy/static/agent.js",
+          "src/docbuddy/static/chat.js",
+          "src/docbuddy/static/workflow.js"
+        ],
+        "evidence": [
+          "Strategy 1 \u2014 silent empty catch: `try { url = decodeURIComponent(url); } catch (e) {}` (agent.js line 180, workflow.js line 423)",
+          "Strategy 2 \u2014 warn-and-continue: `catch (e) { console.warn('Failed to apply path params:', e); }` (agent.js line 201, chat.js line 165, workflow.js line 419) \u2014 execution silently continues with unsubstituted URL",
+          "Strategy 3 \u2014 structured error returned to UI: `catch (e) { var parseErrObj = { status: 0, statusText: 'Invalid JSON', body: ... }; self.sendToolResult(parseErrObj); }` (agent.js line 242)",
+          "All three strategies appear in the same handleExecuteToolCall function flow, making it unclear which failures surface to the user and which are swallowed"
+        ],
+        "suggestion": "Define a consistent policy for the tool-call execution path: parse/decode failures that produce a bad request should surface a structured error to the UI (strategy 3) rather than warn-and-continue. Reserve silent catches only for truly non-critical operations (e.g., URL object construction where a fallback exists). Applying strategy 3 to path-param substitution failures would also eliminate the warn-and-continue silent-bad-request risk.",
+        "reasoning": "",
+        "summary_hash": "5eb65161"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::naming_quality::get_swagger_ui_html_mutates_state": {
+      "id": "review::.::holistic::naming_quality::get_swagger_ui_html_mutates_state",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "get_swagger_ui_html() mutates shared _jinja_env state in debug mode despite its get_ prefix implying a pure read",
+      "detail": {
+        "holistic": true,
+        "dimension": "naming_quality",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Line 57: `env = _jinja_env` \u2014 assigns the shared module-level environment to a local alias.",
+          "Lines 60-63: when debug=True, sets `env.auto_reload = True` and calls `env.cache.clear()` \u2014 both mutate the shared module-level _jinja_env object.",
+          "The function signature and name (get_swagger_ui_html) signal a pure HTML-returning getter, but it has a conditional side effect on shared state."
+        ],
+        "suggestion": "Rename to render_swagger_ui_html or build_swagger_ui_html to communicate that the function constructs/renders a response (and may configure its environment). Alternatively, move the debug-mode env configuration to setup_docs or a dedicated _configure_jinja_env(debug) helper called at setup time, keeping get_swagger_ui_html purely a renderer.",
+        "reasoning": "",
+        "summary_hash": "ecef167a"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::abstraction_fitness::duplicated_version_resolution": {
+      "id": "review::.::holistic::abstraction_fitness::duplicated_version_resolution",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Version-resolution logic duplicated between __init__.py and plugin.py via function-level import workaround",
+      "detail": {
+        "holistic": true,
+        "dimension": "abstraction_fitness",
+        "related_files": [
+          "src/docbuddy/__init__.py",
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "__init__.py lines 3-8: imports version and PackageNotFoundError from importlib.metadata, resolves __version__ via try/except.",
+          "plugin.py lines 66-71: re-implements the identical try/except version-resolution logic via a function-level import. Comment on line 65 says 'Import version here to avoid circular import with __init__.py'.",
+          "The circular import exists because __init__.py does 'from .plugin import setup_docs, get_swagger_ui_html'. The workaround duplicates the resolution logic rather than extracting it to a shared internal module."
+        ],
+        "suggestion": "Extract version resolution into a new src/docbuddy/_version.py module containing only the try/except block that resolves __version__ from importlib.metadata. Both __init__.py and plugin.py can then import __version__ from _version without any circular dependency, and the function-level import in plugin.py can be removed.",
+        "reasoning": "",
+        "summary_hash": "7fce3e6d"
+      },
+      "status": "fixed",
+      "note": "Created _version.py module with shared get_version() function, removed duplicate try/except blocks from __init__.py and plugin.py",
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": "2026-03-18T03:28:28+00:00",
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null,
+      "resolution_attestation": {
+        "kind": "manual",
+        "text": "I have actually Created _version.py module with shared get_version() function, removed duplicate try/except blocks from __init__.py and plugin.py and I am not gaming the score.",
+        "attested_at": "2026-03-18T03:28:28+00:00",
+        "scan_verified": false
+      }
+    },
+    "review::.::holistic::dependency_health::dep_starlette_undeclared": {
+      "id": "review::.::holistic::dependency_health::dep_starlette_undeclared",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "Direct import of starlette.routing.Route without starlette declared as a direct dependency",
+      "detail": {
+        "holistic": true,
+        "dimension": "dependency_health",
+        "related_files": [
+          "src/docbuddy/plugin.py",
+          "pyproject.toml"
+        ],
+        "evidence": [
+          "plugin.py line 13: from starlette.routing import Route",
+          "pyproject.toml [project].dependencies lists only fastapi>=0.95.0 and jinja2>=3.0.0; starlette is absent",
+          "Starlette is present only as a transitive dep pulled in by fastapi \u2014 no guarantee its import surface remains stable across fastapi major versions"
+        ],
+        "suggestion": "Add starlette as an explicit direct dependency in pyproject.toml (e.g. starlette>=0.27.0), matching the starlette version range that fastapi>=0.95.0 requires. Alternatively, import via fastapi.routing if a compatible re-export exists.",
+        "reasoning": "",
+        "summary_hash": "9f173206"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::debug_permanently_mutates_global_jinja_env": {
+      "id": "review::.::holistic::low_level_elegance::debug_permanently_mutates_global_jinja_env",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "debug=True permanently mutates the module-level _jinja_env singleton; subsequent debug=False calls inherit auto_reload=True",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Line 57: `env = _jinja_env` \u2014 local alias, same object",
+          "Line 61: `env.auto_reload = True` \u2014 mutates the shared singleton permanently; no corresponding reset to False when debug=False",
+          "Line 62-63: `env.cache.clear()` is per-call but auto_reload=True persists for all future calls regardless of the debug argument value"
+        ],
+        "suggestion": "Replace the per-call mutation pattern with a dedicated debug environment created once: at module scope, create `_debug_jinja_env` with `auto_reload=True` and no cache, then select between `_jinja_env` and `_debug_jinja_env` based on `debug` rather than mutating the shared instance. Alternatively, remove the debug branch entirely since auto_reload in production Jinja2 is a minor concern for a package that ships compiled templates.",
+        "reasoning": "",
+        "summary_hash": "462b9a3c"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::low_level_elegance::misleading_local_alias_env": {
+      "id": "review::.::holistic::low_level_elegance::misleading_local_alias_env",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "`env = _jinja_env` alias implies an isolated local environment but is the same object; mutation through `env` silently affects the module singleton",
+      "detail": {
+        "holistic": true,
+        "dimension": "low_level_elegance",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Line 57: `env = _jinja_env` \u2014 no copy or new instance; assigns the same reference",
+          "Lines 60-63: the debug block mutates `env` (i.e., `_jinja_env`) \u2014 a developer reading this code would expect `env` to be a local working copy",
+          "The alias is otherwise unused as a simplification \u2014 the same name `_jinja_env` could be used directly, making the mutation explicit"
+        ],
+        "suggestion": "Remove the `env = _jinja_env` alias and reference `_jinja_env` directly everywhere in the function body. This makes it unambiguous that any mutation affects the module-level singleton, and serves as a forcing function to fix the actual mutation issue.",
+        "reasoning": "",
+        "summary_hash": "db94b3c5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::tool_exec_seam_duplicated": {
+      "id": "review::.::holistic::mid_level_elegance::tool_exec_seam_duplicated",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "handleExecuteToolCall and sendToolResult are copy-pasted between chat.js and agent.js with diverging logic",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/docbuddy/static/chat.js",
+          "src/docbuddy/static/agent.js"
+        ],
+        "evidence": [
+          "chat.js handleExecuteToolCall (lines ~109\u2013231) and agent.js handleExecuteToolCall (lines ~145\u2013268) are structurally identical: same path validation, same query string construction, same fetch call, same error branches. The only differences are the agent's autoExecute branch and its _executedToolCallMsg assignment.",
+          "sendToolResult in chat.js enforces a 3-retry limit and calls _streamLLMResponse; agent.js sendToolResult additionally enforces iterationCount ceiling and manages pendingToolCallQueue. The error message string in chat.js is 'Max tool call retries (3) reached' while agent.js uses MAX_TOOL_CALL_RETRIES constant \u2014 the logic has already diverged.",
+          "Both modules independently compute apiBaseUrl via DB.resolveApiBaseUrl(DB._cachedOpenapiSchema) and construct the full fetch URL \u2014 no shared helper exists for this path."
+        ],
+        "suggestion": "Extract tool execution into a shared function in core.js \u2014 e.g., DB.executeToolCall(args, onResult) \u2014 that accepts the resolved URL, method, headers, and a result callback. Both ChatPanel and AgentPanel call this shared function and pass their own onResult handler (which differs: agent checks iteration count, chat does not). This eliminates the duplicated path validation, query string construction, and fetch logic while keeping panel-specific post-result behavior in each panel.",
+        "reasoning": "",
+        "summary_hash": "52af96b4"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::llm_streaming_seam_duplicated": {
+      "id": "review::.::holistic::mid_level_elegance::llm_streaming_seam_duplicated",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "_streamLLMResponse and _streamWithPrompt are independently implemented in chat.js and agent.js",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/docbuddy/static/chat.js",
+          "src/docbuddy/static/agent.js"
+        ],
+        "evidence": [
+          "Both files define _streamLLMResponse as a method that calls ensureSystemPromptConfig + ensureOpenapiSchemaCached and then delegates to _streamWithPrompt. The Promise.all setup and cache-read pattern is identical.",
+          "_streamWithPrompt in both files builds a fetch payload, creates an AbortController, fires a streaming custom event, parses SSE chunks in a while loop, accumulates tool-call fragments in accumulatedToolCalls, and defines a finalize closure. The SSE parsing loop is ~80 lines and structurally identical.",
+          "The agent version additionally appends a mode-context suffix to the system prompt and increments iterationCount in setState. These are the only agent-specific behaviors mixed into the ~150-line duplicated streaming core."
+        ],
+        "suggestion": "Extract the shared SSE streaming core into DB.streamLLMCompletion(payload, settings, options) in core.js, where options carries callbacks for onChunk, onToolCall, onFinalize, and the streaming event name ('docbuddy-chat-streaming' vs 'docbuddy-agent-streaming'). Each panel passes its own event name and callbacks. The system prompt construction and tool-call post-processing remain in each panel as they are the only meaningfully different pieces.",
+        "reasoning": "",
+        "summary_hash": "7cd54e8d"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::mid_level_elegance::standalone_mode_flag_scattered": {
+      "id": "review::.::holistic::mid_level_elegance::standalone_mode_flag_scattered",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "window.DOCBUDDY_VERSION === 'standalone' string-literal mode check is scattered across core.js rather than encapsulated",
+      "detail": {
+        "holistic": true,
+        "dimension": "mid_level_elegance",
+        "related_files": [
+          "src/docbuddy/static/core.js"
+        ],
+        "evidence": [
+          "core.js checks window.DOCBUDDY_VERSION !== 'standalone' / === 'standalone' in five distinct locations: loadSystemPromptConfig (line 39), resolveApiBaseUrl (lines 140, 210), ensureOpenapiSchemaCached (line 1025 DOMContentLoaded handler), and the standalone fallback block.",
+          "Each consumer must know the magic string 'standalone' to correctly branch. A rename or addition of a third mode requires updating all five sites.",
+          "The standalone.html sets window.DOCBUDDY_VERSION = 'standalone' (line 507) while the Jinja template injects the package version string \u2014 the flag is overloaded: it signals both the deployment mode and the display version, which are different concerns."
+        ],
+        "suggestion": "Introduce a single boolean at the top of core.js: `var IS_STANDALONE = (window.DOCBUDDY_VERSION === 'standalone');` and replace all five inline checks with this variable. This does not require a refactor \u2014 it is a single-file change that eliminates the scattered magic-string checks and makes a future mode addition a one-line update.",
+        "reasoning": "",
+        "summary_hash": "b928a3b5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::test_strategy::trivially_weak_js_assertions": {
+      "id": "review::.::holistic::test_strategy::trivially_weak_js_assertions",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Several JS behavioral tests use substring presence assertions too loose to detect logic regressions",
+      "detail": {
+        "holistic": true,
+        "dimension": "test_strategy",
+        "related_files": [
+          "tests/test_plugin.py"
+        ],
+        "evidence": [
+          "test_error_classification: asserts 'error' in js_content \u2014 passes as long as any error-related word appears in the concatenated JS source",
+          "test_dark_theme_default: asserts 'dark' in js_content \u2014 trivially true given dark theme references exist anywhere in source",
+          "test_debug_mode_disables_cache: assertion is a logical disjunction that is always true",
+          "test_empty_api_key_handling: assertion is a logical disjunction that is always true"
+        ],
+        "suggestion": "Replace trivially-true assertions with specific, falsifiable checks: use specific identifier names or rendered HTML values rather than substring presence on raw JS source. For debug mode and cache, test via HTTP response headers or HTML output attributes rather than JS source content.",
+        "reasoning": "",
+        "summary_hash": "79ba1cd0"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::version_param_asymmetry": {
+      "id": "review::.::holistic::api_surface_coherence::version_param_asymmetry",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "get_swagger_ui_html exposes version parameter that setup_docs does not thread through",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "get_swagger_ui_html signature (line 40): version: Optional[str] = None",
+          "setup_docs signature: no version parameter",
+          "Callers using setup_docs (the high-level API) cannot control the displayed version without bypassing to get_swagger_ui_html directly"
+        ],
+        "suggestion": "Add version: Optional[str] = None to setup_docs and thread it through to the get_swagger_ui_html call, or remove version from get_swagger_ui_html and always resolve internally, making the two functions symmetric.",
+        "reasoning": "",
+        "summary_hash": "26011865"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::api_surface_coherence::setup_docs_silent_noop": {
+      "id": "review::.::holistic::api_surface_coherence::setup_docs_silent_noop",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "setup_docs silently no-ops on duplicate calls with no observable signal to caller",
+      "detail": {
+        "holistic": true,
+        "dimension": "api_surface_coherence",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Lines 124-126: if app in _llm_apps: return \u2014 silent return with no warning, no return value, no exception",
+          "Docstring does not mention this idempotency behavior",
+          "Callers cannot detect accidental double-setup"
+        ],
+        "suggestion": "Document the idempotency contract in the setup_docs docstring. Optionally emit warnings.warn() so callers can detect accidental double-setup during development.",
+        "reasoning": "",
+        "summary_hash": "2efa2437"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::stream_impl_duplicated": {
+      "id": "review::.::holistic::ai_generated_debt::stream_impl_duplicated",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "_streamWithPrompt implementation duplicated verbatim between chat.js and agent.js (~200 lines each)",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/docbuddy/static/chat.js",
+          "src/docbuddy/static/agent.js"
+        ],
+        "evidence": [
+          "chat.js lines 422-656 and agent.js lines 443-684 implement the same SSE fetch+processChunk loop, buffer splitting, tool_calls delta accumulation, finalize closure, and error handling.",
+          "Structural differences are: event name ('docbuddy-chat-streaming' vs 'docbuddy-agent-streaming'), history key ('chatHistory' vs 'agentHistory'), save function, and one agent-only mode guard (tool_choice only when mode === 'act').",
+          "Any change to the streaming protocol (new SSE field, retry logic, AbortController behaviour) must be applied identically in both files \u2014 a confirmed AI-debt maintenance trap."
+        ],
+        "suggestion": "Extract the common SSE fetch+processChunk logic into a shared function on window.DocBuddy (e.g., DB.streamLLMCompletion(payload, fetchOpts, callbacks)) that accepts event-name, history-update, and finalize callbacks as parameters. Both ChatPanel._streamWithPrompt and AgentPanel._streamWithPrompt then become thin callers that supply their panel-specific callbacks. This reduces the shared streaming body to one place in core.js.",
+        "reasoning": "",
+        "summary_hash": "acabddcb"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::default_prompt_builder_duplicates_config": {
+      "id": "review::.::holistic::ai_generated_debt::default_prompt_builder_duplicates_config",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "buildDefaultSystemPrompt in core.js reconstructs the api_assistant preset prompt that already exists verbatim in DEFAULT_SYSTEM_PROMPT_CONFIG",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/docbuddy/static/core.js"
+        ],
+        "evidence": [
+          "DEFAULT_SYSTEM_PROMPT_CONFIG.presets.api_assistant.prompt (line 18) contains the full api_assistant system prompt as a single string.",
+          "buildDefaultSystemPrompt (lines 288-354) assembles the same text using an array of fragmented string concatenations \u2014 a classic AI codegen pattern of re-implementing existing data programmatically.",
+          "getSystemPromptForPreset (line 272) falls through to buildDefaultSystemPrompt only when preset lookup fails, but this cannot happen when DEFAULT_SYSTEM_PROMPT_CONFIG is used \u2014 the api_assistant preset is always present in that object."
+        ],
+        "suggestion": "Delete buildDefaultSystemPrompt and replace its call site (line 272) with: return DEFAULT_SYSTEM_PROMPT_CONFIG.presets.api_assistant.prompt || ''. The inline config object is the single source of truth; the separate builder is dead weight that diverges silently when the prompt is updated.",
+        "reasoning": "",
+        "summary_hash": "8d9d9fb3"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::ai_generated_debt::restating_comments_setup_docs": {
+      "id": "review::.::holistic::ai_generated_debt::restating_comments_setup_docs",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "setup_docs in plugin.py has seven inline comments that describe what the code does rather than why",
+      "detail": {
+        "holistic": true,
+        "dimension": "ai_generated_debt",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Line 130: '# Filter routes while avoiding concurrent modification issues' \u2014 preceding code is list(app.router.routes), which is obviously creating a copy.",
+          "Line 133: '# Build set of paths to remove - handle potential None values' \u2014 the set construction on lines 134-138 is self-evident.",
+          "Line 140: '# Filter routes more safely to avoid issues with different route types' \u2014 the for-loop with isinstance check below is readable code.",
+          "Line 144: '# Only remove routes with exact path matches' \u2014 the condition `r.path in paths_to_remove` already communicates this."
+        ],
+        "suggestion": "Replace the four restating inline comments with a single comment above the block explaining the non-obvious constraint: why a copy-then-filter pattern is needed (avoiding mutation during iteration) and why isinstance(r, Route) is required (mixed route types including Mount objects that have no .path). Delete the per-line descriptions.",
+        "reasoning": "",
+        "summary_hash": "498dec57"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::design_coherence::jinja_env_debug_mutation": {
+      "id": "review::.::holistic::design_coherence::jinja_env_debug_mutation",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "get_swagger_ui_html permanently mutates the module-level Jinja env via local alias when debug=True",
+      "detail": {
+        "holistic": true,
+        "dimension": "design_coherence",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Line 57: env = _jinja_env assigns the same object reference, not a copy",
+          "Lines 61-63: env.auto_reload = True and env.cache.clear() are called when debug=True \u2014 these mutate the shared singleton",
+          "After one debug=True call, auto_reload stays True for all subsequent requests regardless of debug parameter value \u2014 a permanent, irreversible side effect"
+        ],
+        "suggestion": "Move the debug-mode Jinja configuration to module initialization or to setup_docs (which has the debug parameter at setup time, not per-request). In get_swagger_ui_html, if debug behaviour is needed per-call, create a separate Environment instance rather than mutating the shared one: e.g., `env = Environment(loader=...) if debug else _jinja_env`.",
+        "reasoning": "",
+        "summary_hash": "85fa5e10"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::docstring_missing_version_param": {
+      "id": "review::.::holistic::contract_coherence::docstring_missing_version_param",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "get_swagger_ui_html docstring omits the 'version' parameter from its Args section",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Function signature at line 40: 'version: Optional[str] = None'",
+          "Docstring Args section (lines 47-56) lists openapi_url, title, swagger_js_url, swagger_css_url, swagger_js_sri, swagger_css_sri, theme_css_url, debug \u2014 but not 'version'",
+          "The 'version' param is used in the template render call at line 82: 'version=version or pkg_version'"
+        ],
+        "suggestion": "Add 'version: Optional version string to display in the UI (defaults to the installed package version).' to the Args section of the get_swagger_ui_html docstring.",
+        "reasoning": "",
+        "summary_hash": "8797b095"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::docstring_missing_theme_css_url_param": {
+      "id": "review::.::holistic::contract_coherence::docstring_missing_theme_css_url_param",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "setup_docs docstring omits the 'theme_css_url' parameter from its Args section",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Function signature at line 97: 'theme_css_url: str = \"/docbuddy-static/themes/light-theme.css\"'",
+          "Docstring Args section (lines 109-118) lists app, docs_url, title, openapi_url, swagger_js_url, swagger_css_url, swagger_js_sri, swagger_css_sri, debug \u2014 but not 'theme_css_url'",
+          "The param is forwarded to get_swagger_ui_html at line 177"
+        ],
+        "suggestion": "Add 'theme_css_url: URL for the theme CSS file (defaults to the bundled light theme).' to the Args section of the setup_docs docstring.",
+        "reasoning": "",
+        "summary_hash": "d8765006"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::contract_coherence::setup_docs_undocumented_idempotency": {
+      "id": "review::.::holistic::contract_coherence::setup_docs_undocumented_idempotency",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "setup_docs silently no-ops on duplicate calls without documenting this behavior",
+      "detail": {
+        "holistic": true,
+        "dimension": "contract_coherence",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "Lines 124-126: 'if app in _llm_apps: return' \u2014 function silently returns without registering routes if called twice on the same app",
+          "Docstring (lines 100-118) describes what the function does on first call but does not mention this idempotency contract",
+          "A caller who calls setup_docs twice expecting the second call to update settings would be silently surprised"
+        ],
+        "suggestion": "Add a note to the setup_docs docstring: 'Calling this function more than once on the same app instance is a no-op; subsequent calls are silently ignored.'",
+        "reasoning": "",
+        "summary_hash": "e280712e"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::async_handler_no_await": {
+      "id": "review::.::holistic::logic_clarity::async_handler_no_await",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "async def custom_docs() never awaits \u2014 could be a plain def route handler",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "plugin.py line 169: async def custom_docs() -> HTMLResponse: body calls only get_swagger_ui_html(...) \u2014 a synchronous function \u2014 with no await expression anywhere in the function.",
+          "FastAPI fully supports def route handlers via threadpool execution; declaring this function async wraps a sync call in a coroutine with no benefit."
+        ],
+        "suggestion": "Change async def custom_docs() -> HTMLResponse: to def custom_docs() -> HTMLResponse:. FastAPI will route it through the threadpool executor, which is the correct behavior for a synchronous handler.",
+        "reasoning": "",
+        "summary_hash": "c3c147a5"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::logic_clarity::env_alias_mutates_singleton": {
+      "id": "review::.::holistic::logic_clarity::env_alias_mutates_singleton",
+      "detector": "review",
+      "file": ".",
+      "tier": 2,
+      "confidence": "medium",
+      "summary": "Local env = _jinja_env alias implies isolation but mutates the shared module-level Jinja2 environment",
+      "detail": {
+        "holistic": true,
+        "dimension": "logic_clarity",
+        "related_files": [
+          "src/docbuddy/plugin.py"
+        ],
+        "evidence": [
+          "plugin.py line 57: env = _jinja_env assigns the module-level singleton to a local name.",
+          "plugin.py lines 60-63: the debug block does env.auto_reload = True and env.cache.clear() \u2014 these mutations affect the shared _jinja_env object, not a local copy.",
+          "A reader seeing env = _jinja_env may assume the debug mutations are scoped to the call; in reality they persistently alter the shared Jinja2 environment for all subsequent requests."
+        ],
+        "suggestion": "Remove the local env alias and operate directly on _jinja_env in the debug block, or add a comment on line 57 making explicit that this is a reference to the shared singleton, not a copy.",
+        "reasoning": "",
+        "summary_hash": "e2d37d86"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "review::.::holistic::type_safety::main_missing_return_annotation": {
+      "id": "review::.::holistic::type_safety::main_missing_return_annotation",
+      "detector": "review",
+      "file": ".",
+      "tier": 1,
+      "confidence": "high",
+      "summary": "main() in cli.py is missing -> None return type annotation",
+      "detail": {
+        "holistic": true,
+        "dimension": "type_safety",
+        "related_files": [
+          "src/docbuddy/cli.py"
+        ],
+        "evidence": [
+          "cli.py line 19: def main(): \u2014 no return type annotation",
+          "pyproject.toml registers this as the 'docbuddy' console script entry point",
+          "All other public functions in the package (get_swagger_ui_html -> HTMLResponse, setup_docs -> None, _pkg_dir -> pathlib.Path) have explicit return annotations"
+        ],
+        "suggestion": "Change def main(): to def main() -> None: on line 19 of cli.py.",
+        "reasoning": "",
+        "summary_hash": "d4085c79"
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:20+00:00",
+      "last_seen": "2026-03-18T02:20:20+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "review_defect",
+      "issue_kind": "review_defect",
+      "origin": "review_import",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    },
+    "stale_exclude::examples::examples": {
+      "id": "stale_exclude::examples::examples",
+      "detector": "stale_exclude",
+      "file": "examples",
+      "tier": 4,
+      "confidence": "low",
+      "summary": "Excluded directory 'examples' has 0 references from scanned code \u2014 may be stale",
+      "detail": {
+        "directory": "examples",
+        "references": 0
+      },
+      "status": "open",
+      "note": null,
+      "first_seen": "2026-03-18T02:20:23+00:00",
+      "last_seen": "2026-03-18T03:26:23+00:00",
+      "resolved_at": null,
+      "reopen_count": 0,
+      "work_item_kind": "mechanical_defect",
+      "issue_kind": "mechanical_defect",
+      "origin": "scan",
+      "lang": "python",
+      "suppressed": false,
+      "suppressed_at": null,
+      "suppression_pattern": null
+    }
+  },
+  "scan_coverage": {
+    "python": {
+      "status": "full",
+      "confidence": 1.0,
+      "detectors": {
+        "security": {
+          "detector": "security",
+          "status": "full",
+          "confidence": 1.0,
+          "summary": "Security coverage complete for enabled detectors.",
+          "impact": "",
+          "remediation": "",
+          "tool": "",
+          "reason": ""
+        }
+      },
+      "warnings": [],
+      "updated_at": "2026-03-18T03:26:23+00:00"
+    }
+  },
+  "score_confidence": {
+    "status": "full",
+    "confidence": 1.0,
+    "detectors": [],
+    "dimensions": []
+  },
+  "scan_metadata": {
+    "source": "scan"
+  },
+  "subjective_integrity": {
+    "status": "pass",
+    "target_score": 95.0,
+    "matched_count": 0,
+    "matched_dimensions": [],
+    "reset_dimensions": []
+  },
+  "subjective_assessments": {
+    "abstraction_fitness": {
+      "score": 84.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00",
+      "components": [
+        "Abstraction Leverage",
+        "Indirection Cost",
+        "Interface Honesty",
+        "Delegation Density",
+        "Definition Directness",
+        "Type Discipline"
+      ],
+      "component_scores": {
+        "Abstraction Leverage": 88.0,
+        "Indirection Cost": 90.0,
+        "Interface Honesty": 95.0,
+        "Delegation Density": 95.0,
+        "Definition Directness": 72.0,
+        "Type Discipline": 95.0
+      }
+    },
+    "ai_generated_debt": {
+      "score": 72.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "api_surface_coherence": {
+      "score": 76.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "authorization_consistency": {
+      "score": 92.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "contract_coherence": {
+      "score": 84.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "convention_outlier": {
+      "score": 90.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "cross_module_architecture": {
+      "score": 91.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "dependency_health": {
+      "score": 82.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "design_coherence": {
+      "score": 82.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "error_consistency": {
+      "score": 79.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "high_level_elegance": {
+      "score": 88.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "incomplete_migration": {
+      "score": 97.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "initialization_coupling": {
+      "score": 91.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "logic_clarity": {
+      "score": 88.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "low_level_elegance": {
+      "score": 78.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "mid_level_elegance": {
+      "score": 72.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "naming_quality": {
+      "score": 84.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "package_organization": {
+      "score": 92.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "test_strategy": {
+      "score": 72.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    },
+    "type_safety": {
+      "score": 87.0,
+      "source": "holistic",
+      "assessed_at": "2026-03-18T02:20:20+00:00"
+    }
+  },
+  "scan_history": [
+    {
+      "timestamp": "2026-03-18T01:37:37+00:00",
+      "lang": "python",
+      "strict_score": 16.6,
+      "verified_strict_score": 66.3,
+      "objective_score": 66.3,
+      "overall_score": 16.6,
+      "open": 36,
+      "diff_new": 36,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 36,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "pass",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": 95.0
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Code quality": {
+          "score": 83.1,
+          "strict": 83.1
+        },
+        "Security": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "File health": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "Duplication": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Test health": {
+          "score": 34.5,
+          "strict": 34.5
+        },
+        "Abstraction fit": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "AI generated debt": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "API coherence": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Auth consistency": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Contracts": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Convention drift": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Cross-module arch": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Dep health": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Design coherence": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Error consistency": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "High elegance": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Stale migration": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Init coupling": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Logic clarity": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Low elegance": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Mid elegance": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Naming quality": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Structure nav": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Test strategy": {
+          "score": 0.0,
+          "strict": 0.0
+        },
+        "Type safety": {
+          "score": 0.0,
+          "strict": 0.0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-03-18T02:20:20+00:00",
+      "lang": "python",
+      "strict_score": 83.6,
+      "verified_strict_score": 86.8,
+      "objective_score": 86.8,
+      "overall_score": 83.6,
+      "open": 54,
+      "diff_new": 25,
+      "diff_resolved": 0,
+      "ignored": 0,
+      "raw_issues": 25,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "disabled",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": null
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Code quality": {
+          "score": 92.2,
+          "strict": 92.2
+        },
+        "Security": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "File health": {
+          "score": 82.5,
+          "strict": 82.5
+        },
+        "Duplication": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Test health": {
+          "score": 77.4,
+          "strict": 77.4
+        },
+        "Abstraction fit": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "AI generated debt": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "API coherence": {
+          "score": 76.0,
+          "strict": 76.0
+        },
+        "Auth consistency": {
+          "score": 92.0,
+          "strict": 92.0
+        },
+        "Contracts": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "Convention drift": {
+          "score": 90.0,
+          "strict": 90.0
+        },
+        "Cross-module arch": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Dep health": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Design coherence": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Error consistency": {
+          "score": 79.0,
+          "strict": 79.0
+        },
+        "High elegance": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Stale migration": {
+          "score": 97.0,
+          "strict": 97.0
+        },
+        "Init coupling": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Logic clarity": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Low elegance": {
+          "score": 78.0,
+          "strict": 78.0
+        },
+        "Mid elegance": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Naming quality": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "Structure nav": {
+          "score": 92.0,
+          "strict": 92.0
+        },
+        "Test strategy": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Type safety": {
+          "score": 87.0,
+          "strict": 87.0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-03-18T02:20:23+00:00",
+      "lang": "python",
+      "strict_score": 81.9,
+      "verified_strict_score": 79.8,
+      "objective_score": 79.8,
+      "overall_score": 81.9,
+      "open": 35,
+      "diff_new": 1,
+      "diff_resolved": 20,
+      "ignored": 0,
+      "raw_issues": 10,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "pass",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": 95.0
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Code quality": {
+          "score": 89.6,
+          "strict": 89.6
+        },
+        "Security": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "File health": {
+          "score": 76.7,
+          "strict": 76.7
+        },
+        "Duplication": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Test health": {
+          "score": 59.9,
+          "strict": 59.9
+        },
+        "Abstraction fit": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "AI generated debt": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "API coherence": {
+          "score": 76.0,
+          "strict": 76.0
+        },
+        "Auth consistency": {
+          "score": 92.0,
+          "strict": 92.0
+        },
+        "Contracts": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "Convention drift": {
+          "score": 90.0,
+          "strict": 90.0
+        },
+        "Cross-module arch": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Dep health": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Design coherence": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Error consistency": {
+          "score": 79.0,
+          "strict": 79.0
+        },
+        "High elegance": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Stale migration": {
+          "score": 97.0,
+          "strict": 97.0
+        },
+        "Init coupling": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Logic clarity": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Low elegance": {
+          "score": 78.0,
+          "strict": 78.0
+        },
+        "Mid elegance": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Naming quality": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "Structure nav": {
+          "score": 92.0,
+          "strict": 92.0
+        },
+        "Test strategy": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Type safety": {
+          "score": 87.0,
+          "strict": 87.0
+        }
+      }
+    },
+    {
+      "timestamp": "2026-03-18T03:26:23+00:00",
+      "lang": "python",
+      "strict_score": 81.9,
+      "verified_strict_score": 79.8,
+      "objective_score": 79.8,
+      "overall_score": 81.9,
+      "open": 35,
+      "diff_new": 0,
+      "diff_resolved": 20,
+      "ignored": 0,
+      "raw_issues": 7,
+      "suppressed_pct": 0.0,
+      "ignore_patterns": 0,
+      "subjective_integrity": {
+        "status": "pass",
+        "matched_count": 0,
+        "reset_count": 0,
+        "target_score": 95.0
+      },
+      "score_confidence": {
+        "status": "full",
+        "confidence": 1.0,
+        "detector_count": 0,
+        "dimension_count": 0
+      },
+      "dimension_scores": {
+        "Code quality": {
+          "score": 89.6,
+          "strict": 89.6
+        },
+        "Security": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "File health": {
+          "score": 76.7,
+          "strict": 76.7
+        },
+        "Duplication": {
+          "score": 100.0,
+          "strict": 100.0
+        },
+        "Test health": {
+          "score": 59.9,
+          "strict": 59.9
+        },
+        "Abstraction fit": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "AI generated debt": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "API coherence": {
+          "score": 76.0,
+          "strict": 76.0
+        },
+        "Auth consistency": {
+          "score": 92.0,
+          "strict": 92.0
+        },
+        "Contracts": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "Convention drift": {
+          "score": 90.0,
+          "strict": 90.0
+        },
+        "Cross-module arch": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Dep health": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Design coherence": {
+          "score": 82.0,
+          "strict": 82.0
+        },
+        "Error consistency": {
+          "score": 79.0,
+          "strict": 79.0
+        },
+        "High elegance": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Stale migration": {
+          "score": 97.0,
+          "strict": 97.0
+        },
+        "Init coupling": {
+          "score": 91.0,
+          "strict": 91.0
+        },
+        "Logic clarity": {
+          "score": 88.0,
+          "strict": 88.0
+        },
+        "Low elegance": {
+          "score": 78.0,
+          "strict": 78.0
+        },
+        "Mid elegance": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Naming quality": {
+          "score": 84.0,
+          "strict": 84.0
+        },
+        "Structure nav": {
+          "score": 92.0,
+          "strict": 92.0
+        },
+        "Test strategy": {
+          "score": 72.0,
+          "strict": 72.0
+        },
+        "Type safety": {
+          "score": 87.0,
+          "strict": 87.0
+        }
+      }
+    }
+  ],
+  "review_cache": {
+    "detectors": {
+      "boilerplate": {
+        "version": 1,
+        "fingerprint": "2b4717446addde1a59523a9dd0f27ef23c526ae1",
+        "entries": [
+          {
+            "id": "006e45f7c773b9e2",
+            "distinct_files": 2,
+            "window_size": 97,
+            "locations": [
+              {
+                "file": "docs/index.html",
+                "line": 502
+              },
+              {
+                "file": "src/docbuddy/standalone.html",
+                "line": 504
+              }
+            ],
+            "sample": [
+              "var DOCBUDDY_BASE = IS_LOCAL ? DOCBUDDY_LOCAL_BASE : DOCBUDDY_CDN_BASE;",
+              "",
+              "      window.DOCBUDDY_STATIC_BASE = DOCBUDDY_BASE;",
+              "      window.DOCBUDDY_VERSION = 'standalone';"
+            ]
+          },
+          {
+            "id": "55ac9d6afdbf0830",
+            "distinct_files": 2,
+            "window_size": 21,
+            "locations": [
+              {
+                "file": "docs/index.html",
+                "line": 911
+              },
+              {
+                "file": "src/docbuddy/standalone.html",
+                "line": 822
+              }
+            ],
+            "sample": [
+              "}",
+              "",
+              "      // \u2500\u2500 Auto-load from query parameter on page load \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+              "      (function() {"
+            ]
+          },
+          {
+            "id": "6d6dbafab7ada169",
+            "distinct_files": 2,
+            "window_size": 46,
+            "locations": [
+              {
+                "file": "docs/index.html",
+                "line": 452
+              },
+              {
+                "file": "src/docbuddy/standalone.html",
+                "line": 453
+              }
+            ],
+            "sample": [
+              "</p>",
+              "",
+              "          <h3>Python Plugin</h3>",
+              "          <p>"
+            ]
+          },
+          {
+            "id": "8bdb91401c65a9be",
+            "distinct_files": 2,
+            "window_size": 24,
+            "locations": [
+              {
+                "file": ".github/workflows/publish-to-pypi.yml",
+                "line": 15
+              },
+              {
+                "file": ".github/workflows/publish-to-testpypi.yml",
+                "line": 15
+              }
+            ],
+            "sample": [
+              ":",
+              "    runs-on: ubuntu-latest",
+              "    steps:",
+              "      - name: Checkout code"
+            ]
+          },
+          {
+            "id": "a10cdc56b4ca5ab9",
+            "distinct_files": 2,
+            "window_size": 6,
+            "locations": [
+              {
+                "file": "src/docbuddy/static/settings.js",
+                "line": 114
+              },
+              {
+                "file": "src/docbuddy/static/workflow.js",
+                "line": 279
+              }
+            ],
+            "sample": [
+              ".signal",
+              "        })",
+              "          .then(function (res) {",
+              "            if (!res.ok) {"
+            ]
+          },
+          {
+            "id": "be94db9cace20d4b",
+            "distinct_files": 2,
+            "window_size": 117,
+            "locations": [
+              {
+                "file": "docs/index.html",
+                "line": 750
+              },
+              {
+                "file": "src/docbuddy/standalone.html",
+                "line": 679
+              }
+            ],
+            "sample": [
+              "// Show the UI",
+              "        document.getElementById('docbuddy-landing').style.display = 'none';",
+              "        document.getElementById('swagger-ui').style.display = 'block';",
+              "        document.getElementById('docbuddy-topbar').style.display = 'flex';"
+            ]
+          },
+          {
+            "id": "c64f93939ea4ec1c",
+            "distinct_files": 2,
+            "window_size": 43,
+            "locations": [
+              {
+                "file": "docs/index.html",
+                "line": 603
+              },
+              {
+                "file": "src/docbuddy/standalone.html",
+                "line": 604
+              }
+            ],
+            "sample": [
+              "try { localStorage.removeItem('docbuddy-api-base-url'); } catch(e) {}",
+              "",
+              "        try {",
+              "          var detectedApiBase = null;"
+            ]
+          },
+          {
+            "id": "ce589b4f062567eb",
+            "distinct_files": 2,
+            "window_size": 13,
+            "locations": [
+              {
+                "file": "src/docbuddy/standalone.html",
+                "line": 8
+              },
+              {
+                "file": "src/docbuddy/templates/swagger_ui.html",
+                "line": 8
+              }
+            ],
+            "sample": [
+              "\" />",
+              "    <!-- FOUC fix: Apply default theme immediately before page renders -->",
+              "    <script>",
+              "      (function() {"
+            ]
+          },
+          {
+            "id": "eee5cd69a8c510bf",
+            "distinct_files": 2,
+            "window_size": 451,
+            "locations": [
+              {
+                "file": "docs/index.html",
+                "line": 1
+              },
+              {
+                "file": "src/docbuddy/standalone.html",
+                "line": 1
+              }
+            ],
+            "sample": [
+              "<!DOCTYPE html>",
+              "<html lang=\"en\">",
+              "  <head>",
+              "    <title>DocBuddy \u2014 AI-Enhanced API Documentation</title>"
+            ]
+          }
+        ]
+      },
+      "security": {
+        "version": 1,
+        "fingerprint": "f98cdc5f0dc2ca11ca123245387a3428917d9cb2",
+        "entries": [],
+        "files_scanned": 5,
+        "coverage": null
+      },
+      "dupes": {
+        "version": 1,
+        "threshold": 0.9,
+        "functions": {
+          "src/docbuddy/cli.py:main:19:78": {
+            "body_hash": "840e0a35b47c7917aef08c792043cd89",
+            "loc": 60
+          },
+          "src/docbuddy/plugin.py:get_swagger_ui_html:32:85": {
+            "body_hash": "7418a6214621dbb6afb2ffbe651c8dc4",
+            "loc": 54
+          },
+          "src/docbuddy/plugin.py:setup_docs:88:176": {
+            "body_hash": "e58dbd6976078bd86349b27d28919ee3",
+            "loc": 89
+          }
+        },
+        "near_pairs": []
+      }
+    },
+    "files": {},
+    "holistic": {
+      "reviewed_at": "2026-03-18T02:20:20+00:00",
+      "file_count_at_review": 3,
+      "issue_count": 25,
+      "reviewed_files_count": 0,
+      "full_sweep_included": false
+    }
+  },
+  "lang_capabilities": {
+    "python": {
+      "fixers": [],
+      "typecheck_cmd": ""
+    }
+  },
+  "zone_distribution": {
+    "production": 3,
+    "test": 1
+  },
+  "tool_hash": "228448e2641a",
+  "scan_path": ".",
+  "scan_completeness": {
+    "python": "full"
+  },
+  "potentials": {
+    "python": {
+      "unused": 3,
+      "structural": 3,
+      "flat_dirs": 3,
+      "props": 0,
+      "responsibility_cohesion": 0,
+      "single_use": 0,
+      "cycles": 3,
+      "orphaned": 3,
+      "facade": 3,
+      "coupling": 0,
+      "uncalled_functions": 0,
+      "test_coverage": 22,
+      "smells": 3,
+      "global_mutable_config": 3,
+      "security": 5,
+      "private_imports": 3,
+      "dict_keys": 3,
+      "unused_enums": 3,
+      "subjective_review": 20,
+      "boilerplate_duplication": 0,
+      "dupes": 3,
+      "stale_wontfix": 0
+    }
+  },
+  "codebase_metrics": {
+    "python": {
+      "total_files": 4,
+      "total_loc": 2335,
+      "total_directories": 2
+    }
+  },
+  "dimension_scores": {
+    "Code quality": {
+      "score": 89.6,
+      "strict": 89.6,
+      "verified_strict_score": 89.6,
+      "checks": 24,
+      "failing": 5,
+      "tier": 3,
+      "detectors": {
+        "unused": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        },
+        "smells": {
+          "potential": 3,
+          "pass_rate": 0.16666666666666666,
+          "failing": 5,
+          "weighted_failures": 2.5
+        },
+        "orphaned": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        },
+        "flat_dirs": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        },
+        "facade": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        },
+        "dict_keys": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        },
+        "global_mutable_config": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        },
+        "private_imports": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        }
+      }
+    },
+    "Security": {
+      "score": 100.0,
+      "strict": 100.0,
+      "verified_strict_score": 100.0,
+      "checks": 8,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "cycles": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        },
+        "security": {
+          "potential": 5,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        }
+      }
+    },
+    "File health": {
+      "score": 76.7,
+      "strict": 76.7,
+      "verified_strict_score": 76.7,
+      "checks": 3,
+      "failing": 1,
+      "tier": 3,
+      "detectors": {
+        "structural": {
+          "potential": 3,
+          "pass_rate": 0.7666666666666666,
+          "failing": 1,
+          "weighted_failures": 0.7
+        }
+      }
+    },
+    "Duplication": {
+      "score": 100.0,
+      "strict": 100.0,
+      "verified_strict_score": 100.0,
+      "checks": 3,
+      "failing": 0,
+      "tier": 3,
+      "detectors": {
+        "dupes": {
+          "potential": 3,
+          "pass_rate": 1.0,
+          "failing": 0,
+          "weighted_failures": 0.0
+        }
+      }
+    },
+    "Test health": {
+      "score": 59.9,
+      "strict": 59.9,
+      "verified_strict_score": 59.9,
+      "checks": 22,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "test_coverage": {
+          "potential": 22,
+          "pass_rate": 0.5985563242578251,
+          "failing": 1,
+          "weighted_failures": 8.831760866327848
+        }
+      }
+    },
+    "Abstraction fit": {
+      "score": 84.0,
+      "strict": 84.0,
+      "verified_strict_score": 84.0,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.84,
+          "failing": 0,
+          "weighted_failures": 1.6,
+          "assessment_score": 84.0,
+          "placeholder": false,
+          "dimension_key": "abstraction_fitness",
+          "configured_weight": 8.0,
+          "components": [
+            "Abstraction Leverage",
+            "Indirection Cost",
+            "Interface Honesty",
+            "Delegation Density",
+            "Definition Directness",
+            "Type Discipline"
+          ],
+          "component_scores": {
+            "Abstraction Leverage": 88.0,
+            "Indirection Cost": 90.0,
+            "Interface Honesty": 95.0,
+            "Delegation Density": 95.0,
+            "Definition Directness": 72.0,
+            "Type Discipline": 95.0
+          }
+        }
+      }
+    },
+    "AI generated debt": {
+      "score": 72.0,
+      "strict": 72.0,
+      "verified_strict_score": 72.0,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.72,
+          "failing": 3,
+          "weighted_failures": 2.8,
+          "assessment_score": 72.0,
+          "placeholder": false,
+          "dimension_key": "ai_generated_debt",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "API coherence": {
+      "score": 76.0,
+      "strict": 76.0,
+      "verified_strict_score": 76.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.76,
+          "failing": 2,
+          "weighted_failures": 2.4,
+          "assessment_score": 76.0,
+          "placeholder": false,
+          "dimension_key": "api_surface_coherence",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Auth consistency": {
+      "score": 92.0,
+      "strict": 92.0,
+      "verified_strict_score": 92.0,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.92,
+          "failing": 0,
+          "weighted_failures": 0.8,
+          "assessment_score": 92.0,
+          "placeholder": false,
+          "dimension_key": "authorization_consistency",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Contracts": {
+      "score": 84.0,
+      "strict": 84.0,
+      "verified_strict_score": 84.0,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.84,
+          "failing": 3,
+          "weighted_failures": 1.6,
+          "assessment_score": 84.0,
+          "placeholder": false,
+          "dimension_key": "contract_coherence",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    },
+    "Convention drift": {
+      "score": 90.0,
+      "strict": 90.0,
+      "verified_strict_score": 90.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.9,
+          "failing": 1,
+          "weighted_failures": 1.0,
+          "assessment_score": 90.0,
+          "placeholder": false,
+          "dimension_key": "convention_outlier",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Cross-module arch": {
+      "score": 91.0,
+      "strict": 91.0,
+      "verified_strict_score": 91.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.91,
+          "failing": 1,
+          "weighted_failures": 0.9,
+          "assessment_score": 91.0,
+          "placeholder": false,
+          "dimension_key": "cross_module_architecture",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Dep health": {
+      "score": 82.0,
+      "strict": 82.0,
+      "verified_strict_score": 82.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.82,
+          "failing": 1,
+          "weighted_failures": 1.8,
+          "assessment_score": 82.0,
+          "placeholder": false,
+          "dimension_key": "dependency_health",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Design coherence": {
+      "score": 82.0,
+      "strict": 82.0,
+      "verified_strict_score": 82.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.82,
+          "failing": 1,
+          "weighted_failures": 1.8,
+          "assessment_score": 82.0,
+          "placeholder": false,
+          "dimension_key": "design_coherence",
+          "configured_weight": 10.0,
+          "components": []
+        }
+      }
+    },
+    "Error consistency": {
+      "score": 79.0,
+      "strict": 79.0,
+      "verified_strict_score": 79.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.79,
+          "failing": 2,
+          "weighted_failures": 2.1,
+          "assessment_score": 79.0,
+          "placeholder": false,
+          "dimension_key": "error_consistency",
+          "configured_weight": 3.0,
+          "components": []
+        }
+      }
+    },
+    "High elegance": {
+      "score": 88.0,
+      "strict": 88.0,
+      "verified_strict_score": 88.0,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.88,
+          "failing": 0,
+          "weighted_failures": 1.2,
+          "assessment_score": 88.0,
+          "placeholder": false,
+          "dimension_key": "high_level_elegance",
+          "configured_weight": 22.0,
+          "components": []
+        }
+      }
+    },
+    "Stale migration": {
+      "score": 97.0,
+      "strict": 97.0,
+      "verified_strict_score": 97.0,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.97,
+          "failing": 0,
+          "weighted_failures": 0.3,
+          "assessment_score": 97.0,
+          "placeholder": false,
+          "dimension_key": "incomplete_migration",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Init coupling": {
+      "score": 91.0,
+      "strict": 91.0,
+      "verified_strict_score": 91.0,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.91,
+          "failing": 0,
+          "weighted_failures": 0.9,
+          "assessment_score": 91.0,
+          "placeholder": false,
+          "dimension_key": "initialization_coupling",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Logic clarity": {
+      "score": 88.0,
+      "strict": 88.0,
+      "verified_strict_score": 88.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.88,
+          "failing": 2,
+          "weighted_failures": 1.2,
+          "assessment_score": 88.0,
+          "placeholder": false,
+          "dimension_key": "logic_clarity",
+          "configured_weight": 6.0,
+          "components": []
+        }
+      }
+    },
+    "Low elegance": {
+      "score": 78.0,
+      "strict": 78.0,
+      "verified_strict_score": 78.0,
+      "checks": 10,
+      "failing": 2,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.78,
+          "failing": 2,
+          "weighted_failures": 2.2,
+          "assessment_score": 78.0,
+          "placeholder": false,
+          "dimension_key": "low_level_elegance",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    },
+    "Mid elegance": {
+      "score": 72.0,
+      "strict": 72.0,
+      "verified_strict_score": 72.0,
+      "checks": 10,
+      "failing": 3,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.72,
+          "failing": 3,
+          "weighted_failures": 2.8,
+          "assessment_score": 72.0,
+          "placeholder": false,
+          "dimension_key": "mid_level_elegance",
+          "configured_weight": 22.0,
+          "components": []
+        }
+      }
+    },
+    "Naming quality": {
+      "score": 84.0,
+      "strict": 84.0,
+      "verified_strict_score": 84.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.84,
+          "failing": 1,
+          "weighted_failures": 1.6,
+          "assessment_score": 84.0,
+          "placeholder": false,
+          "dimension_key": "naming_quality",
+          "configured_weight": 2.0,
+          "components": []
+        }
+      }
+    },
+    "Structure nav": {
+      "score": 92.0,
+      "strict": 92.0,
+      "verified_strict_score": 92.0,
+      "checks": 10,
+      "failing": 0,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.92,
+          "failing": 0,
+          "weighted_failures": 0.8,
+          "assessment_score": 92.0,
+          "placeholder": false,
+          "dimension_key": "package_organization",
+          "configured_weight": 5.0,
+          "components": []
+        }
+      }
+    },
+    "Test strategy": {
+      "score": 72.0,
+      "strict": 72.0,
+      "verified_strict_score": 72.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.72,
+          "failing": 1,
+          "weighted_failures": 2.8,
+          "assessment_score": 72.0,
+          "placeholder": false,
+          "dimension_key": "test_strategy",
+          "configured_weight": 1.0,
+          "components": []
+        }
+      }
+    },
+    "Type safety": {
+      "score": 87.0,
+      "strict": 87.0,
+      "verified_strict_score": 87.0,
+      "checks": 10,
+      "failing": 1,
+      "tier": 4,
+      "detectors": {
+        "subjective_assessment": {
+          "potential": 10,
+          "pass_rate": 0.87,
+          "failing": 1,
+          "weighted_failures": 1.3,
+          "assessment_score": 87.0,
+          "placeholder": false,
+          "dimension_key": "type_safety",
+          "configured_weight": 12.0,
+          "components": []
+        }
+      }
+    }
+  },
+  "reminder_history": {
+    "zone_classification": 3,
+    "report_scores": 3,
+    "review_issues_pending": 2,
+    "stagnant_nudge": 4,
+    "feedback_nudge": 2,
+    "review_not_run": 2
+  },
+  "assessment_import_audit": [
+    {
+      "timestamp": "2026-03-18T02:20:20+00:00",
+      "mode": "trusted_internal",
+      "trusted": true,
+      "reason": "trusted import-run replay from 20260318_015925",
+      "override_used": false,
+      "attested_external": false,
+      "provisional": false,
+      "provisional_count": 0,
+      "attest": "",
+      "import_file": "/Users/kpearson/Programs/ai/llm/swagger-llm-ui/.desloppify/subagents/runs/20260318_015925/holistic_issues_merged.json",
+      "packet_sha256": "85606c38a7843d9c1e25d45e4f29525edd3ba2baaf3255ea9e36e7b7e4d583e1"
+    }
+  ]
+}

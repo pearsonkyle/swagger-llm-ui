@@ -1,0 +1,68 @@
+{
+  "batch": "convention_outlier",
+  "batch_index": 3,
+  "assessments": {"convention_outlier": 90.0},
+  "dimension_notes": {
+    "convention_outlier": {
+      "evidence": [
+        "Python files uniformly follow PEP 8 conventions",
+        "All JavaScript panel modules follow the identical IIFE + window.DocBuddy namespace pattern with consistent factory-function exports",
+        "settings.js exports LLMSettingsPanel while sibling panels are ChatPanel, WorkflowPanel, AgentPanel — no LLM prefix on siblings",
+        "The LLM prefix inconsistency propagates to the Swagger plugin registry name in plugin.js"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "LLMSettingsPanel naming inconsistency — sibling panels omit the LLM prefix; this outlier propagates through plugin.js registry and any cross-references"
+    }
+  },
+  "dimension_judgment": {
+    "convention_outlier": {
+      "dimension_character": "The codebase is strongly convention-consistent. Python uniformly follows PEP 8. All JavaScript panel modules follow the identical IIFE + window.DocBuddy namespace pattern with consistent factory-function exports. The one genuine outlier is the LLM prefix on LLMSettingsPanel that is absent from all sibling panel names.",
+      "score_rationale": "Score 90.0 reflects a near-uniform convention base with a single, isolated naming outlier that propagates to one additional file. The fix is mechanical (rename across 2-4 files) and has no architectural implication."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "llm_settings_panel_naming_drift",
+      "summary": "LLMSettingsPanel has LLM prefix absent from all sibling panels (ChatPanel, WorkflowPanel, AgentPanel)",
+      "related_files": [
+        "src/docbuddy/static/settings.js",
+        "src/docbuddy/static/plugin.js"
+      ],
+      "evidence": [
+        "settings.js exports LLMSettingsPanel and LLMSettingsPanelFactory",
+        "Sibling panels: ChatPanel (chat.js), WorkflowPanel (workflow.js), AgentPanel (agent.js) — no LLM prefix",
+        "plugin.js Swagger plugin registry references LLMSettingsPanel — the outlier name propagates"
+      ],
+      "suggestion": "Rename LLMSettingsPanel -> SettingsPanel and LLMSettingsPanelFactory -> SettingsPanelFactory in settings.js and update all references in plugin.js (and any cross-references in chat.js/agent.js).",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Naming was not reconciled against sibling panel names when settings.js was created"],
+    "likely_symptoms": ["llm_settings_panel_naming_drift"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "convention_outlier": {
+      "add": [
+        {
+          "header": "Uniform IIFE + window.DocBuddy pattern across all JS panels",
+          "description": "All five JavaScript panel modules use the same IIFE pattern with window.DocBuddy namespace assignment and factory-function exports — strong convention consistency.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "LLM prefix on SettingsPanel absent from sibling panels",
+          "description": "settings.js uses LLMSettingsPanel while all three sibling panels (Chat, Workflow, Agent) omit any domain prefix. The outlier propagates to the plugin.js registry.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

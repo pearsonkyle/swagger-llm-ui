@@ -1,0 +1,68 @@
+{
+  "batch": "type_safety",
+  "batch_index": 20,
+  "assessments": {"type_safety": 87.0},
+  "dimension_notes": {
+    "type_safety": {
+      "evidence": [
+        "get_swagger_ui_html() and setup_docs() in plugin.py are fully and accurately annotated (-> HTMLResponse and -> None)",
+        "Optional[str] usage throughout plugin.py is justified — None triggers real fallback logic, not a typing oversight",
+        "_pkg_dir() in cli.py is annotated -> pathlib.Path accurately",
+        "No # type: ignore comments anywhere",
+        "No TypedDict, Enum, or dict[str, Any] misuse opportunities exist",
+        "main() in src/docbuddy/cli.py (line 19) is missing a -> None return type annotation — it is the registered docbuddy console script entry point per pyproject.toml",
+        "Every other public function in the package has an explicit return annotation"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "main() in cli.py is missing -> None return annotation; inconsistent with all other public functions in the package"
+    }
+  },
+  "dimension_judgment": {
+    "type_safety": {
+      "dimension_character": "The package is small (3 files, 269 LOC) and nearly fully type-annotated. All public functions except one carry accurate return type annotations, Optional usage is semantically justified, and there are no type: ignore suppressions. The single gap is the missing -> None on main() in cli.py.",
+      "score_rationale": "Score 87 reflects near-complete type coverage with a single concrete gap. The gap is minor (one missing return annotation on an entry point) but real — the entry point is the most visible function to CLI users and is the only public function without an explicit return type."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "type_safety",
+      "identifier": "main_missing_return_annotation",
+      "summary": "main() in cli.py is missing -> None return type annotation",
+      "related_files": ["src/docbuddy/cli.py"],
+      "evidence": [
+        "cli.py line 19: def main(): — no return type annotation",
+        "pyproject.toml registers this as the 'docbuddy' console script entry point",
+        "All other public functions in the package (get_swagger_ui_html -> HTMLResponse, setup_docs -> None, _pkg_dir -> pathlib.Path) have explicit return annotations"
+      ],
+      "suggestion": "Change def main(): to def main() -> None: on line 19 of cli.py.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [],
+    "likely_symptoms": ["main_missing_return_annotation"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "type_safety": {
+      "add": [
+        {
+          "header": "Near-complete return type annotation coverage",
+          "description": "All public functions except main() in cli.py carry accurate return type annotations. Optional usage is semantically justified throughout — None values trigger real fallback logic.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No type: ignore suppressions anywhere",
+          "description": "The codebase contains zero # type: ignore comments — type errors are resolved properly rather than suppressed.",
+          "settled": true,
+          "positive": true
+        }
+      ]
+    }
+  }
+}

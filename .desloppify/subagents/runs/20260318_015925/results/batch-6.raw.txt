@@ -1,0 +1,89 @@
+{
+  "batch": "abstraction_fitness",
+  "batch_index": 6,
+  "assessments": {"abstraction_fitness": 84.0},
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "__init__.py (12 LOC) is an intentional public facade re-exporting setup_docs, get_swagger_ui_html, version, and PackageNotFoundError — matches the 'stabilize public import paths' skip criterion exactly.",
+        "cli.py is a cohesive CLI entry point with no cross-module wrapper chains; all logic is inline and _pkg_dir() is a local helper used once.",
+        "setup_docs() in plugin.py has 8 parameters but each has independent semantic meaning. Grouping them would obscure meaning.",
+        "custom_docs inner function (plugin.py lines 169-179) forwards 7 closure variables to get_swagger_ui_html. This is a FastAPI routing boundary requirement, not a gratuitous wrapper.",
+        "plugin.py line 66 contains a function-level import to avoid a circular import with __init__.py — version-resolution logic is duplicated across both files.",
+        "facade_modules signal on cli.py (re_export_ratio 0.89) is a false positive — stdlib imports counted as re-exported symbols.",
+        "No Protocol/base-class abstractions with single implementations. No generic helper utils modules. No dict-based implicit parameter bags."
+      ],
+      "impact_scope": "local",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Duplicated version-resolution logic between __init__.py and plugin.py (function-level import workaround) is a minor but real abstraction gap — a _version.py module would eliminate it cleanly.",
+      "sub_axes": {
+        "abstraction_leverage": 88.0,
+        "indirection_cost": 90.0,
+        "interface_honesty": 95.0,
+        "delegation_density": 95.0,
+        "definition_directness": 72.0,
+        "type_discipline": 95.0
+      }
+    }
+  },
+  "dimension_judgment": {
+    "abstraction_fitness": {
+      "dimension_character": "The codebase is strikingly lean for a published Python package: three production files with no generic helper surfaces, no single-implementation protocols, and no implicit parameter bags. Abstractions are direct — the public facade in __init__.py is intentional and small, the CLI entry point is self-contained, and the plugin module exposes two well-bounded functions. The only material fitness gap is a duplicated version-resolution concern caused by the absence of a small internal _version.py module, which manifests as a function-level import workaround in plugin.py.",
+      "score_rationale": "At the 80-90 anchor range, the codebase mostly serves a developer well on abstraction fitness with only occasional friction. Here the friction is isolated to a single spot: a function-level import in plugin.py duplicating logic already present in __init__.py. Everything else — the facade, the CLI, the route-mounting logic — uses direct, flat, purposeful abstractions. The score sits at 84 rather than 90 because the circular-import workaround is a real structural smell even if its impact is low."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "duplicated_version_resolution",
+      "summary": "Version-resolution logic duplicated between __init__.py and plugin.py via function-level import workaround",
+      "related_files": [
+        "src/docbuddy/__init__.py",
+        "src/docbuddy/plugin.py"
+      ],
+      "evidence": [
+        "__init__.py lines 3-8: imports version and PackageNotFoundError from importlib.metadata, resolves __version__ via try/except.",
+        "plugin.py lines 66-71: re-implements the identical try/except version-resolution logic via a function-level import. Comment on line 65 says 'Import version here to avoid circular import with __init__.py'.",
+        "The circular import exists because __init__.py does 'from .plugin import setup_docs, get_swagger_ui_html'. The workaround duplicates the resolution logic rather than extracting it to a shared internal module."
+      ],
+      "suggestion": "Extract version resolution into a new src/docbuddy/_version.py module containing only the try/except block that resolves __version__ from importlib.metadata. Both __init__.py and plugin.py can then import __version__ from _version without any circular dependency, and the function-level import in plugin.py can be removed.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Absent _version.py internal module forces duplication of version-resolution logic and a function-level import workaround in plugin.py."
+    ],
+    "likely_symptoms": ["duplicated_version_resolution"],
+    "possible_false_positives": [
+      "facade_module signal on cli.py — stdlib imports counted as re-exported symbols by detector"
+    ]
+  },
+  "context_updates": {
+    "abstraction_fitness": {
+      "add": [
+        {
+          "header": "__init__.py is an intentional public facade",
+          "description": "The 12-LOC __init__.py re-exports exactly 4 public symbols with __all__. This is a deliberate package API surface stabilizer, not an indirection smell.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No generic helper surfaces or protocol over-abstraction",
+          "description": "The codebase has zero utils modules, zero single-implementation Protocol/base-class abstractions, and zero dict-based implicit parameter bags. Abstractions are domain-aligned and bounded.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Version resolution duplicated across __init__ and plugin",
+          "description": "A circular-import constraint forces plugin.py to re-implement the importlib.metadata version lookup as a function-level import instead of sharing a _version.py module. This is the one real abstraction boundary gap in the package.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

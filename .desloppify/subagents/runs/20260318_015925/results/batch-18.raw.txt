@@ -1,0 +1,107 @@
+{
+  "batch": "contract_coherence",
+  "batch_index": 18,
+  "assessments": {
+    "contract_coherence": 84.0
+  },
+  "dimension_notes": {
+    "contract_coherence": {
+      "evidence": [
+        "get_swagger_ui_html signature has 'version: Optional[str] = None' but the docstring Args section omits this parameter entirely (plugin.py lines 30-56)",
+        "setup_docs signature has 'theme_css_url: str' but the docstring Args section omits this parameter entirely (plugin.py lines 87-118)",
+        "Both public functions have accurate return type annotations: get_swagger_ui_html -> HTMLResponse (always returns HTMLResponse), setup_docs -> None (mutates app in place)",
+        "setup_docs silently returns early if app already configured (line 126: 'if app in _llm_apps: return') — this idempotency behavior is undocumented",
+        "No getter functions mutate state; _pkg_dir() is a pure path accessor, get_swagger_ui_html() is a pure renderer",
+        "__all__ in __init__.py accurately reflects the two exported symbols"
+      ],
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "confidence": "high",
+      "issues_preventing_higher_score": "Two public functions have docstring/signature divergence: 'version' param missing from get_swagger_ui_html docstring, 'theme_css_url' param missing from setup_docs docstring. The idempotency behavior of setup_docs (silent no-op on duplicate calls) is not documented."
+    }
+  },
+  "dimension_judgment": {
+    "contract_coherence": {
+      "dimension_character": "The codebase's contract coherence is structurally sound: return type annotations are accurate, no getter functions mutate state, and the module's public API is honestly represented in __all__. The weakness is concentrated in docstring completeness — two public functions omit parameters from their Args sections, creating a gap between what the signature promises and what the docstring documents.",
+      "score_rationale": "The return type and behavioral contracts are fully honored, which is the more critical half of contract coherence. The docstring omissions for 'version' in get_swagger_ui_html and 'theme_css_url' in setup_docs are real gaps a developer would encounter when reading the docs without the source. The undocumented idempotency behavior of setup_docs is a minor additional gap. This places the codebase solidly in the high-80s — better than 'solid but uneven' but short of the 90+ tier due to the recurring pattern of incomplete docstrings across both public functions."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "contract_coherence",
+      "identifier": "docstring_missing_version_param",
+      "summary": "get_swagger_ui_html docstring omits the 'version' parameter from its Args section",
+      "related_files": ["src/docbuddy/plugin.py"],
+      "evidence": [
+        "Function signature at line 40: 'version: Optional[str] = None'",
+        "Docstring Args section (lines 47-56) lists openapi_url, title, swagger_js_url, swagger_css_url, swagger_js_sri, swagger_css_sri, theme_css_url, debug — but not 'version'",
+        "The 'version' param is used in the template render call at line 82: 'version=version or pkg_version'"
+      ],
+      "suggestion": "Add 'version: Optional version string to display in the UI (defaults to the installed package version).' to the Args section of the get_swagger_ui_html docstring.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "docstring_missing_theme_css_url_param",
+      "summary": "setup_docs docstring omits the 'theme_css_url' parameter from its Args section",
+      "related_files": ["src/docbuddy/plugin.py"],
+      "evidence": [
+        "Function signature at line 97: 'theme_css_url: str = \"/docbuddy-static/themes/light-theme.css\"'",
+        "Docstring Args section (lines 109-118) lists app, docs_url, title, openapi_url, swagger_js_url, swagger_css_url, swagger_js_sri, swagger_css_sri, debug — but not 'theme_css_url'",
+        "The param is forwarded to get_swagger_ui_html at line 177"
+      ],
+      "suggestion": "Add 'theme_css_url: URL for the theme CSS file (defaults to the bundled light theme).' to the Args section of the setup_docs docstring.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "incomplete_docstring_args"
+    },
+    {
+      "dimension": "contract_coherence",
+      "identifier": "setup_docs_undocumented_idempotency",
+      "summary": "setup_docs silently no-ops on duplicate calls without documenting this behavior",
+      "related_files": ["src/docbuddy/plugin.py"],
+      "evidence": [
+        "Lines 124-126: 'if app in _llm_apps: return' — function silently returns without registering routes if called twice on the same app",
+        "Docstring (lines 100-118) describes what the function does on first call but does not mention this idempotency contract",
+        "A caller who calls setup_docs twice expecting the second call to update settings would be silently surprised"
+      ],
+      "suggestion": "Add a note to the setup_docs docstring: 'Calling this function more than once on the same app instance is a no-op; subsequent calls are silently ignored.'",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "incomplete_docstring_args"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["incomplete_docstring_args: both public functions have docstring Args sections that were not kept in sync with signature additions"],
+    "likely_symptoms": ["docstring_missing_version_param", "docstring_missing_theme_css_url_param"],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "contract_coherence": {
+      "add": [
+        {
+          "header": "Return type annotations accurate across all paths",
+          "description": "Both public functions carry accurate return type annotations verified against all return paths: get_swagger_ui_html always returns HTMLResponse, setup_docs always returns None (including the early-return idempotency path).",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "No getter-named functions with hidden mutation",
+          "description": "get_swagger_ui_html and _pkg_dir() are pure computations with no observable side effects. The module-level state mutation is isolated to setup_docs, which is named appropriately.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Docstring Args sections lag signature additions",
+          "description": "Both public functions show evidence of parameters being added to signatures without corresponding docstring updates: 'version' missing from get_swagger_ui_html docs, 'theme_css_url' missing from setup_docs docs. Suggests docstrings are not reviewed when signatures change.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

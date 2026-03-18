@@ -1,0 +1,69 @@
+{
+  "batch": "test_strategy",
+  "batch_index": 10,
+  "assessments": {"test_strategy": 72.0},
+  "dimension_notes": {
+    "test_strategy": {
+      "evidence": [
+        "151 tests in tests/test_plugin.py use integration-style TestClient, providing solid coverage of plugin.py routing, static serving, HTML templating, thread safety, and CLI behavior",
+        "cli.py scanner signal (untested) is a false positive — CLI behavior is covered via integration tests",
+        "Majority of JS behavioral tests assert string presence in concatenated JS source, coupling tests to naming rather than runtime behavior",
+        "test_error_classification checks 'error' in js_content — trivially always true if JS has any error handling",
+        "test_dark_theme_default checks 'dark' in js_content — trivially always true given the codebase references dark theme",
+        "test_debug_mode_disables_cache uses always-true disjunction in assertion",
+        "test_empty_api_key_handling uses always-true disjunction in assertion"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "medium",
+      "issues_preventing_higher_score": "Several JS tests use assertions so loose they cannot detect logic regressions — they pass regardless of whether the feature under test works correctly"
+    }
+  },
+  "dimension_judgment": {
+    "test_strategy": {
+      "dimension_character": "The test suite is integration-first with good coverage of the Python surface. The weakness is concentrated in JS behavioral tests that use substring presence assertions on concatenated source, which cannot detect behavioral regressions. A cluster of tests have near-trivially-true assertions that would pass even if the feature were removed.",
+      "score_rationale": "Score 72 reflects a solid integration foundation undermined by a cluster of weak assertions that provide false confidence. The Python integration tests are well-structured but the JS coverage layer is superficial and would not catch regressions in debug mode, theme, or error handling behavior."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "test_strategy",
+      "identifier": "trivially_weak_js_assertions",
+      "summary": "Several JS behavioral tests use substring presence assertions too loose to detect logic regressions",
+      "related_files": ["tests/test_plugin.py"],
+      "evidence": [
+        "test_error_classification: asserts 'error' in js_content — passes as long as any error-related word appears in the concatenated JS source",
+        "test_dark_theme_default: asserts 'dark' in js_content — trivially true given dark theme references exist anywhere in source",
+        "test_debug_mode_disables_cache: assertion is a logical disjunction that is always true",
+        "test_empty_api_key_handling: assertion is a logical disjunction that is always true"
+      ],
+      "suggestion": "Replace trivially-true assertions with specific, falsifiable checks: use specific identifier names or rendered HTML values rather than substring presence on raw JS source. For debug mode and cache, test via HTTP response headers or HTML output attributes rather than JS source content.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["JS behavior tested via source-string inspection rather than runtime execution or rendered output"],
+    "likely_symptoms": ["trivially_weak_js_assertions"],
+    "possible_false_positives": ["cli_untested scanner signal — CLI is covered via integration tests"]
+  },
+  "context_updates": {
+    "test_strategy": {
+      "add": [
+        {
+          "header": "Integration-first test suite with TestClient",
+          "description": "151 tests use FastAPI TestClient for integration-level coverage of routing, static serving, HTML templating, and thread safety. This is the right testing strategy for a FastAPI plugin.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "JS behavioral tests use source substring assertions",
+          "description": "Tests checking JavaScript behavior assert substring presence in concatenated raw JS source rather than testing rendered output or actual behavior. This creates false confidence — tests pass even when the feature logic is broken.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

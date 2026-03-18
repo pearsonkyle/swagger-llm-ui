@@ -1,0 +1,126 @@
+{
+  "batch": "ai_generated_debt",
+  "batch_index": 13,
+  "assessments": {
+    "ai_generated_debt": 72.0
+  },
+  "dimension_notes": {
+    "ai_generated_debt": {
+      "evidence": [
+        "Python files (plugin.py, cli.py, __init__.py) are lean and purposeful — inline comments explain WHY (circular import avoidance, TOCTOU race, WeakSet lifecycle), not WHAT.",
+        "console.debug calls in core.js (9 instances) are exclusively inside resolveApiBaseUrl, tracing a genuinely complex multi-step priority chain — appropriate diagnostic logging at a real integration boundary, not nosy entry/exit logs.",
+        "localStorage try/catch pattern across 8 storage helpers (loadChatHistory, saveAgentHistory, etc.) is defensive at a genuine I/O boundary, not cargo-cult wrapping.",
+        "_streamWithPrompt is duplicated nearly verbatim between chat.js and agent.js — the SSE chunk parsing loop (processChunk), buffer splitting, tool_calls accumulation, finalize pattern, and fetch setup are identical across ~200 lines each. Only the streaming event name, history state key, and an agent-specific mode guard differ.",
+        "buildDefaultSystemPrompt in core.js (lines 288-354) assembles the same text as DEFAULT_SYSTEM_PROMPT_CONFIG.presets.api_assistant.prompt using fragmented string concatenation. The two representations must be manually kept in sync; the function exists as a codegen-style safety net but adds divergence risk.",
+        "plugin.py setup_docs has seven low-value inline comments in 25 lines of route manipulation: '# Filter routes while avoiding concurrent modification issues', '# Build set of paths to remove - handle potential None values', '# Filter routes more safely to avoid issues with different route types', '# Only remove routes with exact path matches'. These describe what the code does, not why the specific approach was chosen."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "ai_generated_debt": {
+      "dimension_character": "The Python layer is clean and purposeful — its comments explain non-obvious constraints (circular imports, thread safety, WeakSet lifecycle) rather than restating lines. The JavaScript layer shows a mixed picture: most code is purpose-driven and the console.debug logging is scoped to a genuinely complex URL resolution algorithm, but there is meaningful AI-hallmark debt in two areas — a ~200-line streaming implementation duplicated verbatim between chat.js and agent.js, and a buildDefaultSystemPrompt function that reconstructs the api_assistant preset prompt via fragmented string concatenation that already exists in the inline config object. The per-line restating comments inside setup_docs are a minor nuisance rather than a major drain.",
+      "score_rationale": "The codebase is mostly clean and purposeful — no entry/exit logging noise, no null-check sprawl, no boilerplate error handling scattered across many files in the Python layer. However, the duplicated _streamWithPrompt implementation across chat.js and agent.js is a textbook AI-generated debt pattern: two near-identical ~200-line blocks that must be kept in sync, differing only by event name and a mode guard. This plus the buildDefaultSystemPrompt duplication represent real drag — a developer modifying the streaming protocol must make parallel edits in two files, which is exactly the 'wades through formulaic patterns' friction at the 80-anchor. The score lands in the high-70s: clearly better than the 60-anchor (noise is not pervasive, logic is readable) but the streaming duplication prevents a score above 80."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "stream_impl_duplicated",
+      "summary": "_streamWithPrompt implementation duplicated verbatim between chat.js and agent.js (~200 lines each)",
+      "related_files": [
+        "src/docbuddy/static/chat.js",
+        "src/docbuddy/static/agent.js"
+      ],
+      "evidence": [
+        "chat.js lines 422-656 and agent.js lines 443-684 implement the same SSE fetch+processChunk loop, buffer splitting, tool_calls delta accumulation, finalize closure, and error handling.",
+        "Structural differences are: event name ('docbuddy-chat-streaming' vs 'docbuddy-agent-streaming'), history key ('chatHistory' vs 'agentHistory'), save function, and one agent-only mode guard (tool_choice only when mode === 'act').",
+        "Any change to the streaming protocol (new SSE field, retry logic, AbortController behaviour) must be applied identically in both files — a confirmed AI-debt maintenance trap."
+      ],
+      "suggestion": "Extract the common SSE fetch+processChunk logic into a shared function on window.DocBuddy (e.g., DB.streamLLMCompletion(payload, fetchOpts, callbacks)) that accepts event-name, history-update, and finalize callbacks as parameters. Both ChatPanel._streamWithPrompt and AgentPanel._streamWithPrompt then become thin callers that supply their panel-specific callbacks. This reduces the shared streaming body to one place in core.js.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "streaming_logic_duplication"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "default_prompt_builder_duplicates_config",
+      "summary": "buildDefaultSystemPrompt in core.js reconstructs the api_assistant preset prompt that already exists verbatim in DEFAULT_SYSTEM_PROMPT_CONFIG",
+      "related_files": [
+        "src/docbuddy/static/core.js"
+      ],
+      "evidence": [
+        "DEFAULT_SYSTEM_PROMPT_CONFIG.presets.api_assistant.prompt (line 18) contains the full api_assistant system prompt as a single string.",
+        "buildDefaultSystemPrompt (lines 288-354) assembles the same text using an array of fragmented string concatenations — a classic AI codegen pattern of re-implementing existing data programmatically.",
+        "getSystemPromptForPreset (line 272) falls through to buildDefaultSystemPrompt only when preset lookup fails, but this cannot happen when DEFAULT_SYSTEM_PROMPT_CONFIG is used — the api_assistant preset is always present in that object."
+      ],
+      "suggestion": "Delete buildDefaultSystemPrompt and replace its call site (line 272) with: return DEFAULT_SYSTEM_PROMPT_CONFIG.presets.api_assistant.prompt || ''. The inline config object is the single source of truth; the separate builder is dead weight that diverges silently when the prompt is updated.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "prompt_text_duplication"
+    },
+    {
+      "dimension": "ai_generated_debt",
+      "identifier": "restating_comments_setup_docs",
+      "summary": "setup_docs in plugin.py has seven inline comments that describe what the code does rather than why",
+      "related_files": [
+        "src/docbuddy/plugin.py"
+      ],
+      "evidence": [
+        "Line 130: '# Filter routes while avoiding concurrent modification issues' — preceding code is list(app.router.routes), which is obviously creating a copy.",
+        "Line 133: '# Build set of paths to remove - handle potential None values' — the set construction on lines 134-138 is self-evident.",
+        "Line 140: '# Filter routes more safely to avoid issues with different route types' — the for-loop with isinstance check below is readable code.",
+        "Line 144: '# Only remove routes with exact path matches' — the condition `r.path in paths_to_remove` already communicates this."
+      ],
+      "suggestion": "Replace the four restating inline comments with a single comment above the block explaining the non-obvious constraint: why a copy-then-filter pattern is needed (avoiding mutation during iteration) and why isinstance(r, Route) is required (mixed route types including Mount objects that have no .path). Delete the per-line descriptions.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Streaming protocol implemented independently in each panel component rather than delegated to a shared utility — likely because the components were developed in parallel or scaffolded separately.",
+      "Fallback prompt builder was written as a programmatic safety net alongside the inline config but never removed when the config became the authoritative source."
+    ],
+    "likely_symptoms": [
+      "stream_impl_duplicated",
+      "default_prompt_builder_duplicates_config"
+    ],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "ai_generated_debt": {
+      "add": [
+        {
+          "header": "Python layer free of AI-debt hallmarks",
+          "description": "plugin.py and cli.py comments explain non-obvious constraints (circular imports, thread safety, WeakSet lifecycle) rather than restating code lines. No entry/exit logging, no defensive null-check sprawl.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "console.debug scoped to complex URL resolution",
+          "description": "All 9 console.debug calls in core.js are inside resolveApiBaseUrl, tracing a 4-step priority chain where per-step logging is genuinely useful for cross-origin deployment debugging. Not noisy entry/exit logging.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Streaming implementation duplicated across chat and agent panels",
+          "description": "The _streamWithPrompt method body is nearly identical in chat.js and agent.js (~200 lines each). This is a structural AI-debt pattern: any protocol change requires parallel edits. The duplication exists because panels were developed as independent units.",
+          "settled": true,
+          "positive": false
+        },
+        {
+          "header": "buildDefaultSystemPrompt duplicates inline config preset",
+          "description": "core.js contains a programmatic prompt builder that reconstructs the api_assistant preset already present in DEFAULT_SYSTEM_PROMPT_CONFIG. The function cannot be reached in practice since the config always contains the preset, making it dead maintenance burden.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}

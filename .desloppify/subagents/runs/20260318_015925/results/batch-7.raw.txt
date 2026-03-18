@@ -1,0 +1,69 @@
+{
+  "batch": "dependency_health",
+  "batch_index": 7,
+  "assessments": {"dependency_health": 82.0},
+  "dimension_notes": {
+    "dependency_health": {
+      "evidence": [
+        "pyproject.toml declares exactly two runtime dependencies: fastapi>=0.95.0 and jinja2>=3.0.0",
+        "Both dependencies are actively used in plugin.py: fastapi (FastAPI, HTMLResponse, StaticFiles) and jinja2 (Environment, FileSystemLoader)",
+        "cli.py uses only stdlib (argparse, functools, http.server, pathlib, sys, threading, time, webbrowser) — zero third-party deps at runtime",
+        "plugin.py imports starlette.routing.Route directly (line 13), but starlette is not listed as a direct dependency — it is only a transitive dep via fastapi",
+        "No lock file (uv.lock, poetry.lock, requirements.txt) exists in the repository root — dev environment reproducibility relies solely on range bounds",
+        "No duplicate libraries for the same purpose detected",
+        "No heavy dependencies pulled in for light use — both fastapi and jinja2 are central to the plugin's function",
+        "No circular import cycles visible in the import graph (3 production files, linear dependency direction)",
+        "dev dependencies (uvicorn, pytest, httpx, ruff, mypy, bandit, pre-commit) are correctly isolated under [project.optional-dependencies] dev"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "dimension_judgment": {
+    "dependency_health": {
+      "dimension_character": "The production dependency set is admirably minimal — two well-matched libraries (fastapi and jinja2) with no bloat, no duplicates, and no unused entries. The one latent issue is that plugin.py imports starlette.routing.Route directly while starlette is only a transitive dependency of fastapi, creating an undeclared direct dependency that could silently break if fastapi ever changes its starlette re-export surface.",
+      "score_rationale": "A two-dependency runtime profile with zero waste or duplication is strong. The score is held below 85 by the undeclared direct starlette import — it is a real risk, not a style note, but it is a single-edit fix (add starlette to the dependency list or import via fastapi's re-export). The absence of a lock file is standard practice for published libraries and does not penalize the score."
+    }
+  },
+  "issues": [
+    {
+      "dimension": "dependency_health",
+      "identifier": "dep_starlette_undeclared",
+      "summary": "Direct import of starlette.routing.Route without starlette declared as a direct dependency",
+      "related_files": ["src/docbuddy/plugin.py", "pyproject.toml"],
+      "evidence": [
+        "plugin.py line 13: from starlette.routing import Route",
+        "pyproject.toml [project].dependencies lists only fastapi>=0.95.0 and jinja2>=3.0.0; starlette is absent",
+        "Starlette is present only as a transitive dep pulled in by fastapi — no guarantee its import surface remains stable across fastapi major versions"
+      ],
+      "suggestion": "Add starlette as an explicit direct dependency in pyproject.toml (e.g. starlette>=0.27.0), matching the starlette version range that fastapi>=0.95.0 requires. Alternatively, import via fastapi.routing if a compatible re-export exists.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit"
+    }
+  ],
+  "retrospective": {
+    "root_causes": ["Minimal codebase with deliberate dependency hygiene; the single gap is an implicit assumption that starlette is always available via fastapi's transitive closure"],
+    "likely_symptoms": [],
+    "possible_false_positives": []
+  },
+  "context_updates": {
+    "dependency_health": {
+      "add": [
+        {
+          "header": "Two-dep runtime profile, both fully utilized",
+          "description": "The package declares exactly fastapi and jinja2 as runtime deps. Both are used at every request path in plugin.py. The CLI uses only stdlib, adding zero additional weight.",
+          "settled": true,
+          "positive": true
+        },
+        {
+          "header": "Starlette imported directly but undeclared",
+          "description": "plugin.py imports starlette.routing.Route directly while starlette is only a transitive dependency via fastapi. This is a latent breakage risk if fastapi restructures its starlette boundary in a future major release.",
+          "settled": true,
+          "positive": false
+        }
+      ]
+    }
+  }
+}
